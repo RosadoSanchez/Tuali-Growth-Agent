@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../constants/theme';
 import CartBar from '../../components/CartBar';
+import CapiFab from '../../components/CapiFab';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -64,16 +65,19 @@ function TabBar({ state, navigation }: any) {
 
 export default function TabsLayout() {
   return (
-    <Tabs
-      screenOptions={{ headerShown: false }}
-      tabBar={(props) => <TabBar {...props} />}
-    >
-      <Tabs.Screen name="index" />
-      <Tabs.Screen name="productos" />
-      <Tabs.Screen name="gana" />
-      <Tabs.Screen name="pedidos" />
-      <Tabs.Screen name="menu" />
-    </Tabs>
+    <View style={{ flex: 1 }}>
+      <Tabs
+        screenOptions={{ headerShown: false }}
+        tabBar={(props) => <TabBar {...props} />}
+      >
+        <Tabs.Screen name="index" />
+        <Tabs.Screen name="productos" />
+        <Tabs.Screen name="gana" />
+        <Tabs.Screen name="pedidos" />
+        <Tabs.Screen name="menu" />
+      </Tabs>
+      <CapiFab />
+    </View>
   );
 }
 
