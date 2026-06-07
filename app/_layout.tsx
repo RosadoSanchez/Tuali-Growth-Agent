@@ -24,6 +24,16 @@ export default function RootLayout() {
             />
             <Stack.Screen name="growth" />
             <Stack.Screen name="carrito" options={{ presentation: 'card' }} />
+            <Stack.Screen
+              name="capi/onboarding"
+              options={{
+                presentation: 'transparentModal',
+                animation: 'slide_from_bottom',
+              }}
+            />
+            <Stack.Screen name="capi/chat" options={{ presentation: 'card' }} />
+            <Stack.Screen name="capi/marcador" options={{ presentation: 'card' }} />
+            <Stack.Screen name="capi/voz" options={{ presentation: 'modal' }} />
           </Stack>
         </CartProvider>
       </SafeAreaProvider>
