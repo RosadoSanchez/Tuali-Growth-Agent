@@ -4,7 +4,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { CartProvider } from '../context/CartContext';
 import { colors } from '../constants/theme';
-import ElevenFloatingButton from '../components/ElevenFloatingButton';
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -35,7 +34,6 @@ export default function RootLayout() {
             <Stack.Screen name="capi/marcador" options={{ presentation: 'card' }} />
             <Stack.Screen name="capi/voz" options={{ presentation: 'modal' }} />
           </Stack>
-          <ElevenFloatingButton />
         </CartProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
