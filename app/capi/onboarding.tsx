@@ -19,7 +19,8 @@ export default function CapiOnboarding() {
   const [goal, setGoal] = useState('');
   const insets = useSafeAreaInsets();
 
-  const openChat = () => router.replace('/capi/chat');
+  const openChat = (selectedGoal: string) =>
+    router.replace({ pathname: '/capi/chat', params: { goal: selectedGoal } });
 
   return (
     <View style={styles.root}>
@@ -49,7 +50,7 @@ export default function CapiOnboarding() {
             paso el plan.
           </Text>
 
-          <Pressable style={[styles.option, styles.optionTop]} onPress={openChat}>
+          <Pressable style={[styles.option, styles.optionTop]} onPress={() => openChat('Vender más')}>
             <View style={[styles.optIcon, { backgroundColor: '#FBE3E3' }]}>
               <Ionicons name="trending-up" size={22} color={colors.red} />
             </View>
@@ -63,7 +64,7 @@ export default function CapiOnboarding() {
             <Ionicons name="chevron-forward" size={18} color={colors.primary} />
           </Pressable>
 
-          <Pressable style={styles.option} onPress={openChat}>
+          <Pressable style={styles.option} onPress={() => openChat('Subir mi ticket promedio')}>
             <View style={[styles.optIcon, { backgroundColor: '#EDE7FB' }]}>
               <Ionicons name="receipt-outline" size={22} color={colors.primary} />
             </View>
@@ -97,7 +98,7 @@ export default function CapiOnboarding() {
               placeholder="Ej. Vender 50 cajas de refresco..."
               placeholderTextColor={colors.textMuted}
               style={styles.input}
-              onSubmitEditing={openChat}
+              onSubmitEditing={() => openChat(goal || 'Vender más')}
               returnKeyType="send"
             />
             <Pressable style={styles.mic} onPress={() => router.replace('/capi/voz')}>

@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -12,72 +13,94 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { colors, radius, shadow } from '../../constants/theme';
-import { askAgent } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
+import { agentChat, ChatTurn, Jugada } from '../../services/api';
 
 const CAPI_PFP = require('../../assets/img/capipfpbig.png');
 const CAPI_REPLY = require('../../assets/img/capichatreply.png');
 
 type Msg = { id: string; from: 'capi' | 'user'; text: string };
 
-const INITIAL: Msg[] = [
-  {
-    id: 'm1',
-    from: 'capi',
-    text: '¡Listo, Chabelita! Tu meta es subir el ticket promedio. Te armé una jugada para llegar al gol.',
-  },
-  { id: 'm2', from: 'user', text: '¿Y qué hago primero, Capi?' },
-  {
-    id: 'm3',
-    from: 'capi',
-    text: 'Fácil. Aquí está tu jugada. Activa las que quieras y yo llevo el marcador.',
-  },
-];
-
 const CHIPS = ['Subir mi ticket', 'Vender más', 'Ponme una meta'];
 
 export default function CapiChat() {
   const { customerId } = useAuth();
-  const [messages, setMessages] = useState<Msg[]>(INITIAL);
+  const { add } = useCart();
+  const { goal } = useLocalSearchParams<{ goal?: string }>();
+
+  const [messages, setMessages] = useState<Msg[]>([]);
+  const [jugada, setJugada] = useState<Jugada | null>(null);
+  const [activated, setActivated] = useState<Record<string, boolean>>({});
   const [text, setText] = useState('');
+  const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
   const scrollDown = () =>
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
 
+  // Primer saludo + jugada al abrir (un solo flujo, cero clics extra).
+  useEffect(() => {
+    if (!customerId) return;
+    (async () => {
+      try {
+        const res = await agentChat(customerId, { goal: goal as string });
+        setMessages([{ id: 'm0', from: 'capi', text: res.reply }]);
+        setJugada(res.jugada);
+      } catch (e: any) {
+        setMessages([
+          {
+            id: 'err',
+            from: 'capi',
+            text: `No pude conectarme 😕 (${e.message})`,
+          },
+        ]);
+      } finally {
+        setLoading(false);
+        scrollDown();
+      }
+    })();
+  }, [customerId]);
+
   const send = async (t: string) => {
     const v = t.trim();
-    if (!v || sending) return;
+    if (!v || sending || !customerId) return;
 
-    setMessages((prev) => [
-      ...prev,
-      { id: `u${prev.length}`, from: 'user', text: v },
-    ]);
+    const userMsg: Msg = { id: `u${messages.length}`, from: 'user', text: v };
+    setMessages((prev) => [...prev, userMsg]);
     setText('');
     setSending(true);
     scrollDown();
 
-    // Le pasamos el customer_id al agente para que pueda contextualizar.
-    const question = customerId ? `[cliente ${customerId}] ${v}` : v;
-    let reply =
-      '¡Va! Lo sumo a tu jugada y te aviso cómo vamos en el marcador.';
     try {
-      const res = await askAgent(question);
-      if (res?.answer) reply = res.answer;
-    } catch {
-      reply =
-        'Uy, no pude conectarme con tu agente ahorita. Revisa tu conexión e inténtalo de nuevo.';
+      const history: ChatTurn[] = [...messages, userMsg].map((m) => ({
+        from: m.from,
+        text: m.text,
+      }));
+      const res = await agentChat(customerId, { message: v, goal: goal as string, history });
+      setMessages((prev) => [
+        ...prev,
+        { id: `c${prev.length}`, from: 'capi', text: res.reply },
+      ]);
+      if (res.jugada) setJugada(res.jugada);
+    } catch (e: any) {
+      setMessages((prev) => [
+        ...prev,
+        { id: `e${prev.length}`, from: 'capi', text: `Ups, fallé: ${e.message}` },
+      ]);
+    } finally {
+      setSending(false);
+      scrollDown();
     }
+  };
 
-    setMessages((prev) => [
-      ...prev,
-      { id: `c${prev.length}`, from: 'capi', text: reply },
-    ]);
-    setSending(false);
-    scrollDown();
+  // Un solo tap: activar el movimiento (y si es pedido, va al carrito).
+  const activate = (key: string, type: string) => {
+    setActivated((prev) => ({ ...prev, [key]: true }));
+    if (type === 'reorder') add('p1', 1); // sugerido al carrito
   };
 
   return (
@@ -91,6 +114,9 @@ export default function CapiChat() {
             {sending ? 'escribiendo…' : 'armando tu jugada'}
           </Text>
         </View>
+        <Pressable style={styles.hbtn} onPress={() => router.push('/capi/marcador')}>
+          <Ionicons name="stats-chart" size={18} color={colors.primary} />
+        </Pressable>
         <Pressable style={styles.hbtn} onPress={() => router.back()}>
           <Ionicons name="close" size={18} color={colors.textMuted} />
         </Pressable>
@@ -107,6 +133,15 @@ export default function CapiChat() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ padding: 16, paddingBottom: 8, gap: 14 }}
         >
+          {loading && (
+            <View style={styles.capiRow}>
+              <Image source={CAPI_REPLY} style={styles.replyPfp} />
+              <View style={styles.capiBubble}>
+                <ActivityIndicator color={colors.red} />
+              </View>
+            </View>
+          )}
+
           {messages.map((m) =>
             m.from === 'capi' ? (
               <View key={m.id} style={styles.capiRow}>
@@ -124,38 +159,59 @@ export default function CapiChat() {
             )
           )}
 
-          {/* Tarjeta de jugada */}
-          <View style={styles.jugada}>
-            <View style={styles.jugadaHead}>
-              <Image source={CAPI_REPLY} style={styles.replyPfp} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.jugadaTitle}>Tu jugada para subir tu ticket</Text>
-                <Text style={styles.jugadaSub}>
-                  4 movimientos · toca Activar los que quieras
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.reto}>
-              <View style={styles.retoTagRow}>
-                <View style={styles.retoIcon}>
-                  <Ionicons name="disc" size={16} color="#fff" />
+          {/* Tarjeta de jugada (dinámica) */}
+          {jugada && (
+            <View style={styles.jugada}>
+              <View style={styles.jugadaHead}>
+                <Image source={CAPI_REPLY} style={styles.replyPfp} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.jugadaTitle}>{jugada.title}</Text>
+                  <Text style={styles.jugadaSub}>{jugada.sub}</Text>
                 </View>
-                <Text style={styles.retoTag}>RETO DE GANA</Text>
               </View>
-              <Text style={styles.retoTitle}>
-                Acepta el reto: vende 3 combos esta semana
-              </Text>
-              <Text style={styles.retoDesc}>
-                Tú vendes mucho refresco solo; los combos suben el ticket sin bajar
-                tu margen. Y te dan 200 Puntos.
-              </Text>
-              <Pressable style={styles.activar}>
-                <Ionicons name="flash" size={15} color="#fff" />
-                <Text style={styles.activarText}>Activar</Text>
-              </Pressable>
+
+              {jugada.moves.map((mv, i) => {
+                const key = `mv${i}`;
+                const done = activated[key];
+                return (
+                  <View key={key} style={styles.reto}>
+                    <View style={styles.retoTagRow}>
+                      <View style={styles.retoIcon}>
+                        <Ionicons name="disc" size={16} color="#fff" />
+                      </View>
+                      <Text style={styles.retoTag}>{mv.tag}</Text>
+                      {!!mv.impact && <Text style={styles.impact}>{mv.impact}</Text>}
+                    </View>
+                    <Text style={styles.retoTitle}>{mv.title}</Text>
+                    <Text style={styles.retoDesc}>{mv.desc}</Text>
+                    <Pressable
+                      style={[styles.activar, done && styles.activarDone]}
+                      onPress={() => activate(key, mv.type)}
+                      disabled={done}
+                    >
+                      <Ionicons
+                        name={done ? 'checkmark' : 'flash'}
+                        size={15}
+                        color="#fff"
+                      />
+                      <Text style={styles.activarText}>
+                        {done ? 'Activado' : mv.cta}
+                      </Text>
+                    </Pressable>
+                  </View>
+                );
+              })}
             </View>
-          </View>
+          )}
+
+          {sending && (
+            <View style={styles.capiRow}>
+              <Image source={CAPI_REPLY} style={styles.replyPfp} />
+              <View style={styles.capiBubble}>
+                <ActivityIndicator color={colors.red} />
+              </View>
+            </View>
+          )}
         </ScrollView>
 
         {/* Quick chips */}
@@ -181,6 +237,7 @@ export default function CapiChat() {
               style={styles.input}
               onSubmitEditing={() => send(text)}
               returnKeyType="send"
+              editable={!sending}
             />
           </View>
           <Pressable style={styles.micBtn} onPress={() => router.push('/capi/voz')}>
@@ -263,6 +320,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   retoTag: { fontSize: 11, fontWeight: '800', color: '#9C8B17' },
+  impact: { fontSize: 11, fontWeight: '800', color: colors.green, marginLeft: 'auto' },
   retoTitle: { fontSize: 14, fontWeight: '800', color: colors.text, marginTop: 8 },
   retoDesc: { fontSize: 12, color: colors.textMuted, marginTop: 4, lineHeight: 16 },
   activar: {
@@ -276,6 +334,7 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     marginTop: 12,
   },
+  activarDone: { backgroundColor: colors.green },
   activarText: { color: '#fff', fontWeight: '800', fontSize: 13 },
   chipRow: {
     flexDirection: 'row',

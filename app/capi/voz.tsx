@@ -1,23 +1,75 @@
 import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { colors, radius, shadow } from '../../constants/theme';
+import { ELEVENLABS_AGENT_ID } from '../../constants/config';
+import { useAuth } from '../../context/AuthContext';
 
 const CAPI = require('../../assets/img/capichatreply.png');
 
 const BARS = [10, 18, 28, 16, 34, 22, 40, 26, 14, 30, 20, 36, 12, 24, 18];
 
+// HTML que carga el widget conversacional de ElevenLabs.
+// Le pasamos el customer_id como dynamic-variable para que Capi ya sepa
+// con qué cliente está hablando (sin tener que pedírselo al tendero).
+const widgetHtml = (agentId: string, customerId: string | null) => {
+  const dynamicVars = JSON.stringify({ customer_id: customerId ?? '' });
+  return `<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <style>
+      html, body { margin: 0; height: 100%; background: #F1ECFB; }
+      #wrap { display: flex; align-items: center; justify-content: center; height: 100%; }
+    </style>
+  </head>
+  <body>
+    <div id="wrap">
+      <elevenlabs-convai agent-id="${agentId}" dynamic-variables='${dynamicVars}'></elevenlabs-convai>
+    </div>
+    <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+  </body>
+</html>`;
+};
+
 export default function CapiVoz() {
+  const { customerId } = useAuth();
+  const Header = (
+    <View style={styles.header}>
+      <View style={{ flex: 1 }} />
+      <Pressable style={styles.hbtn} onPress={() => router.back()}>
+        <Ionicons name="close" size={18} color={colors.textMuted} />
+      </Pressable>
+    </View>
+  );
+
+  // Con Agent ID configurado: agente de voz real (widget de ElevenLabs).
+  if (ELEVENLABS_AGENT_ID) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        {Header}
+        <WebView
+          originWhitelist={['*']}
+          source={{ html: widgetHtml(ELEVENLABS_AGENT_ID, customerId) }}
+          style={{ flex: 1, backgroundColor: '#F1ECFB' }}
+          javaScriptEnabled
+          domStorageEnabled
+          allowsInlineMediaPlayback
+          mediaPlaybackRequiresUserAction={false}
+          // Android: otorga el micrófono automáticamente al widget.
+          mediaCapturePermissionGrantType="grant"
+        />
+      </SafeAreaView>
+    );
+  }
+
+  // Sin Agent ID: demo estática (pega tu Agent ID en app.json para activar).
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <View style={{ flex: 1 }} />
-        <Pressable style={styles.hbtn} onPress={() => router.back()}>
-          <Ionicons name="close" size={18} color={colors.textMuted} />
-        </Pressable>
-      </View>
+      {Header}
 
       <View style={styles.body}>
         <View style={styles.avatarWrap}>
@@ -58,6 +110,10 @@ export default function CapiVoz() {
             </Text>
           </Pressable>
         </View>
+
+        <Text style={styles.hint}>
+          Pega tu Agent ID de ElevenLabs en app.json para activar la voz real.
+        </Text>
       </View>
 
       <View style={styles.footer}>
@@ -130,6 +186,12 @@ const styles = StyleSheet.create({
   },
   actionGhost: { backgroundColor: '#fff' },
   actionText: { fontSize: 15, fontWeight: '800', color: '#fff' },
+  hint: {
+    fontSize: 11,
+    color: colors.textMuted,
+    textAlign: 'center',
+    paddingHorizontal: 32,
+  },
   footer: { alignItems: 'center', gap: 8, paddingBottom: 16 },
   mic: {
     width: 68,
