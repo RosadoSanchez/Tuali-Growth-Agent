@@ -14,14 +14,18 @@
       "backgroundColor": "#FF7A66"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Capi usa el micrófono para que puedas hablarle por voz."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#FF7A66",
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": ["RECORD_AUDIO"]
     },
     "web": {
       "bundler": "metro",
@@ -29,7 +33,8 @@
     },
     "plugins": ["expo-router"],
     "extra": {
-      "apiUrl": "http://localhost:3000"
+      "apiUrl": "http://localhost:3000",
+      "elevenLabsAgentId": "agent_2401ktg0qhxdfgnvxrpehmf4hx5z"
     }
   }
 }

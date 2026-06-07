@@ -128,3 +128,54 @@ export async function askAgent(question: string) {
     body: JSON.stringify({ question }),
   });
 }
+
+// ----- Capi (agente) -----
+
+export type Move = {
+  type: 'reto' | 'reorder' | 'combo' | 'loyalty' | string;
+  tag: string;
+  title: string;
+  desc: string;
+  cta: string;
+  impact?: string;
+};
+
+export type Jugada = {
+  title: string;
+  sub: string;
+  moves: Move[];
+};
+
+export type CapiResponse = {
+  success: boolean;
+  reply: string;
+  jugada: Jugada;
+  source?: string;
+};
+
+export type ChatTurn = { from: 'capi' | 'user'; text: string };
+
+// Habla con Capi. goal = meta elegida; message = lo que escribe el tendero.
+export async function agentChat(
+  customerId: string,
+  opts: { goal?: string; message?: string; history?: ChatTurn[] } = {}
+): Promise<CapiResponse> {
+  return request<CapiResponse>('/api/agent/chat', {
+    method: 'POST',
+    body: JSON.stringify({ customer_id: customerId, ...opts }),
+  });
+}
+
+export type Scoreboard = {
+  success: boolean;
+  ticket: { current: number; before: number; goal: number; deltaPct: number };
+  match: { progress: number; isGoal: boolean };
+  whatWorked: string[];
+  whatToAdjust: string[];
+  meta: { totalOrders: number; deliveryRate: number };
+};
+
+// Marcador del cliente (datos reales).
+export async function getScoreboard(customerId: string): Promise<Scoreboard> {
+  return request<Scoreboard>(`/api/customers/${customerId}/scoreboard`);
+}
