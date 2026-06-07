@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -6,13 +6,64 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { colors, radius, shadow } from '../constants/theme';
 import { moneyShort } from '../constants/format';
-import { growthGoals, recommendations } from '../data/store';
+import { GrowthGoal, growthGoals, recommendations } from '../data/store';
+import { CustomerInsights, fetchCustomerInsights } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 type Feedback = 'up' | 'down' | null;
 
 export default function Growth() {
+  const { customerId } = useAuth();
   const [feedback, setFeedback] = useState<Record<string, Feedback>>({});
   const [done, setDone] = useState<Record<string, boolean>>({});
+  const [insights, setInsights] = useState<CustomerInsights | null>(null);
+
+  useEffect(() => {
+    if (!customerId) return;
+    let alive = true;
+    fetchCustomerInsights(customerId)
+      .then((data) => alive && setInsights(data))
+      .catch(() => alive && setInsights(null));
+    return () => {
+      alive = false;
+    };
+  }, [customerId]);
+
+  // Hero y metas a partir de datos reales (con fallback al mock).
+  const heroSummary = insights?.summary ??
+    'Analicé tu historial, tus promos y lo que se vende en tu zona.';
+
+  const goals: GrowthGoal[] = useMemo(() => {
+    if (!insights) return growthGoals;
+    const { totalSpent, totalOrders, deliveryRate } = insights.metrics;
+    const ticket = totalOrders > 0 ? totalSpent / totalOrders : 0;
+    return [
+      {
+        id: 'ventas',
+        title: 'Ventas históricas acumuladas',
+        metric: `${totalOrders} pedidos`,
+        current: totalSpent,
+        target: Math.max(totalSpent * 1.15, 1),
+        unit: '$',
+      },
+      {
+        id: 'ticket',
+        title: 'Subir ticket promedio',
+        metric: 'Ticket promedio',
+        current: ticket,
+        target: Math.max(ticket * 1.2, 1),
+        unit: '$',
+      },
+      {
+        id: 'entrega',
+        title: 'Tasa de entrega exitosa',
+        metric: 'Pedidos entregados',
+        current: Math.round(deliveryRate),
+        target: 100,
+        unit: '%',
+      },
+    ];
+  }, [insights]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -41,17 +92,17 @@ export default function Growth() {
           <Text style={styles.heroTitle}>
             ¡Hola Chabela! Esta semana podemos crecer tus ventas un 9%.
           </Text>
-          <Text style={styles.heroSub}>
-            Analicé tu historial, tus promos y lo que se vende en tu zona.
-          </Text>
+          <Text style={styles.heroSub}>{heroSummary}</Text>
         </LinearGradient>
 
         {/* Metas activas */}
         <View>
           <Text style={styles.sectionTitle}>Tus metas</Text>
           <View style={{ gap: 12, marginTop: 12 }}>
-            {growthGoals.map((g) => {
+            {goals.map((g) => {
               const pct = Math.min(100, Math.round((g.current / g.target) * 100));
+              const fmt = (n: number) =>
+                g.unit === '%' ? `${Math.round(n)}%` : moneyShort(n);
               return (
                 <View key={g.id} style={styles.goalCard}>
                   <View style={styles.goalHead}>
@@ -62,8 +113,7 @@ export default function Growth() {
                     <View style={[styles.fill, { width: `${pct}%` }]} />
                   </View>
                   <Text style={styles.goalMeta}>
-                    {moneyShort(g.current)} de {moneyShort(g.target)} ·{' '}
-                    {g.metric}
+                    {fmt(g.current)} de {fmt(g.target)} · {g.metric}
                   </Text>
                 </View>
               );

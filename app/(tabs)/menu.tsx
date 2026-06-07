@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import { colors, radius, shadow } from '../../constants/theme';
 import { moneyShort } from '../../constants/format';
 import { store } from '../../data/store';
+import { useAuth } from '../../context/AuthContext';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -17,6 +18,22 @@ const MENU: { icon: IconName; label: string; sub?: string; route?: string }[] = 
 ];
 
 export default function Perfil() {
+  const { profile, customerId, signOut } = useAuth();
+
+  // Datos reales del cliente logueado (con fallback al mock si algo falta).
+  const displayName = customerId ? `Cliente ${customerId.slice(-4)}` : store.name;
+  const ventasMes = profile ? profile.total_spent : store.ventasMes;
+  const ticketPromedio =
+    profile && profile.total_orders > 0
+      ? profile.total_spent / profile.total_orders
+      : store.ticketPromedio;
+  const pedidosCount = profile ? profile.total_orders : null;
+
+  const handleLogout = () => {
+    signOut();
+    router.replace('/login');
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView
@@ -31,26 +48,30 @@ export default function Perfil() {
         >
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {store.name.charAt(0)}
+              {displayName.charAt(0)}
             </Text>
           </View>
-          <Text style={styles.name}>{store.name}</Text>
+          <Text style={styles.name}>{displayName}</Text>
           <Text style={styles.owner}>{store.owner} · {store.level}</Text>
 
           <View style={styles.stats}>
             <View style={styles.stat}>
-              <Text style={styles.statValue}>{store.points}</Text>
-              <Text style={styles.statLabel}>Puntos</Text>
+              <Text style={styles.statValue}>
+                {pedidosCount ?? store.points}
+              </Text>
+              <Text style={styles.statLabel}>
+                {pedidosCount != null ? 'Pedidos' : 'Puntos'}
+              </Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
-              <Text style={styles.statValue}>{moneyShort(store.ticketPromedio)}</Text>
+              <Text style={styles.statValue}>{moneyShort(ticketPromedio)}</Text>
               <Text style={styles.statLabel}>Ticket prom.</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
-              <Text style={styles.statValue}>{moneyShort(store.ventasMes)}</Text>
-              <Text style={styles.statLabel}>Ventas mes</Text>
+              <Text style={styles.statValue}>{moneyShort(ventasMes)}</Text>
+              <Text style={styles.statLabel}>Total gastado</Text>
             </View>
           </View>
         </LinearGradient>
@@ -74,7 +95,7 @@ export default function Perfil() {
           ))}
         </View>
 
-        <Pressable style={styles.logout}>
+        <Pressable style={styles.logout} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={18} color={colors.red} />
           <Text style={styles.logoutText}>Cerrar sesión</Text>
         </Pressable>

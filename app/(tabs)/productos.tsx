@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -7,16 +7,35 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import SearchBar from '../../components/SearchBar';
 import ItemImage from '../../components/ItemImage';
 import ProductCard from '../../components/ProductCard';
 import SectionHeader from '../../components/SectionHeader';
 import { categories, products } from '../../data/catalog';
 import { colors, radius, shadow } from '../../constants/theme';
+import { fetchTopProducts } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Categorias() {
+  const { customerId } = useAuth();
   const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const [topProducts, setTopProducts] = useState<
+    { _id: string; total: number }[]
+  >([]);
+
+  // Productos que este cliente más ha pedido (datos reales del backend).
+  useEffect(() => {
+    if (!customerId) return;
+    let alive = true;
+    fetchTopProducts(customerId)
+      .then((data) => alive && setTopProducts(data ?? []))
+      .catch(() => alive && setTopProducts([]));
+    return () => {
+      alive = false;
+    };
+  }, [customerId]);
 
   const filtered = useMemo(() => {
     let list = products;
@@ -75,6 +94,26 @@ export default function Categorias() {
           })}
         </View>
 
+        {topProducts.length > 0 && !query && !selected && (
+          <View style={{ marginTop: 20 }}>
+            <SectionHeader title="Tus más pedidos" />
+            {topProducts.slice(0, 5).map((p, i) => (
+              <View key={p._id} style={styles.topRow}>
+                <View style={styles.topRank}>
+                  <Text style={styles.topRankText}>{i + 1}</Text>
+                </View>
+                <Text style={styles.topName} numberOfLines={2}>
+                  {p._id}
+                </Text>
+                <View style={styles.topQty}>
+                  <Ionicons name="cube-outline" size={13} color={colors.primary} />
+                  <Text style={styles.topQtyText}>{p.total}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
         <View style={{ marginTop: 20 }}>
           <SectionHeader
             title={selectedName ? selectedName : 'Todos los productos'}
@@ -126,4 +165,34 @@ const styles = StyleSheet.create({
   },
   gridItem: { width: '48.5%' },
   empty: { textAlign: 'center', color: colors.textMuted, marginTop: 30 },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#fff',
+    borderRadius: radius.md,
+    padding: 12,
+    marginBottom: 8,
+    ...shadow.soft,
+  },
+  topRank: {
+    width: 26,
+    height: 26,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topRankText: { fontSize: 13, fontWeight: '900', color: colors.primary },
+  topName: { flex: 1, fontSize: 13, fontWeight: '600', color: colors.text },
+  topQty: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.surfaceAlt,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+  },
+  topQtyText: { fontSize: 12, fontWeight: '800', color: colors.primary },
 });
