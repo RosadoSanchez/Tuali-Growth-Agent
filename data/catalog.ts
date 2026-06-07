@@ -4,7 +4,7 @@ import { colors } from '../constants/theme';
 export const brands: Brand[] = [
   { id: 'coca', name: 'Coca-Cola', icon: 'wine-outline', color: '#E3000F', image: require('../assets/img/Coca-Cola_logo_white.png'), logoBg: '#E3000F' },
   { id: 'ciel', name: 'Ciel', icon: 'water-outline', color: '#1CA3EC', image: require('../assets/img/agua.png') },
-  { id: 'bokados', name: 'Bokados', icon: 'fast-food-outline', color: '#F7941D', image: require('../assets/img/bokados_logo.png'), logoBg: '#FCEFC0' },
+  { id: 'bokados', name: 'Bokados', icon: 'fast-food-outline', color: '#F7941D', image: require('../assets/img/bokados_logo.png'), logoBg: '#ffb429' },
   { id: 'powerade', name: 'Powerade', icon: 'flash-outline', color: '#0072CE' },
   { id: 'valle', name: 'Del Valle', icon: 'nutrition-outline', color: '#FFB400' },
   { id: 'topochico', name: 'Topo Chico', icon: 'water-outline', color: '#00843D' },
