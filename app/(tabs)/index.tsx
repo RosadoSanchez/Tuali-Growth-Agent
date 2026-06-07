@@ -5,11 +5,12 @@ import { router } from 'expo-router';
 import TopBar from '../../components/TopBar';
 import SearchBar from '../../components/SearchBar';
 import BrandChips from '../../components/BrandChips';
+import OrderStatusStrip from '../../components/OrderStatusStrip';
+import QuickCategories from '../../components/QuickCategories';
 import LoyaltyBanner from '../../components/LoyaltyBanner';
 import PromoCarousel from '../../components/PromoCarousel';
 import SectionHeader from '../../components/SectionHeader';
 import ProductCard from '../../components/ProductCard';
-import GrowthAgentCard from '../../components/GrowthAgentCard';
 import { popularProducts, reorderProducts } from '../../data/catalog';
 import { colors, spacing } from '../../constants/theme';
 
@@ -17,19 +18,21 @@ export default function Home() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <TopBar />
-      <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+      <View style={{ paddingHorizontal: 16, paddingBottom: 6 }}>
         <SearchBar />
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 24, gap: spacing.xl }}
+        contentContainerStyle={{ paddingBottom: 24, gap: spacing.md }}
       >
-        <View style={{ marginTop: 8 }}>
+        <View style={{ marginTop: 6 }}>
           <BrandChips />
         </View>
 
-        <GrowthAgentCard />
+        <OrderStatusStrip />
+
+        <QuickCategories />
 
         <LoyaltyBanner />
 
@@ -43,8 +46,9 @@ export default function Home() {
         <View style={styles.sectionPad}>
           <SectionHeader
             title="Vuelve a surtir"
-            actionLabel="Ver todo"
-            onAction={() => router.push('/(tabs)/categorias')}
+            subtitle="De pedidos anteriores, listos para reponer"
+            actionLabel="Ver todos"
+            onAction={() => router.push('/(tabs)/productos')}
           />
           <ScrollView
             horizontal
@@ -58,7 +62,13 @@ export default function Home() {
         </View>
 
         <View style={styles.sectionPad}>
-          <SectionHeader title="Más vendidos en tu zona" />
+          <SectionHeader
+            title="Se venden bien"
+            icon="bulb"
+            subtitle="Ya dejan ganancias en negocios como el tuyo"
+            actionLabel="Ver todos"
+            onAction={() => router.push('/(tabs)/productos')}
+          />
           <View style={styles.grid}>
             {popularProducts.map((p) => (
               <View key={p.id} style={styles.gridItem}>

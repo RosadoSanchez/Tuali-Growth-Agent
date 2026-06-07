@@ -11,11 +11,7 @@ import { store } from '../../data/store';
 type IconName = keyof typeof Ionicons.glyphMap;
 
 const MENU: { icon: IconName; label: string; sub?: string; route?: string }[] = [
-  { icon: 'sparkles-outline', label: 'Agente de Crecimiento', sub: 'Tus recomendaciones', route: '/growth' },
-  { icon: 'person-outline', label: 'Mi perfil', sub: 'Datos de la tienda' },
-  { icon: 'star-outline', label: 'Loyalty y puntos', sub: `${store.points} puntos` },
-  { icon: 'pricetag-outline', label: 'Mis promociones' },
-  { icon: 'card-outline', label: 'Métodos de pago' },
+  { icon: 'person-outline', label: 'Mi Perfil', sub: 'Datos de la tienda' },
   { icon: 'help-circle-outline', label: 'Soporte' },
   { icon: 'document-text-outline', label: 'Términos y condiciones' },
 ];

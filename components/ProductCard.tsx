@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -7,20 +7,41 @@ import { colors, radius, shadow } from '../constants/theme';
 import { money } from '../constants/format';
 import { useCart } from '../context/CartContext';
 import QtyStepper from './QtyStepper';
+import ProductImage from './ProductImage';
 
 type Props = { product: Product; width?: number };
 
 export default function ProductCard({ product, width }: Props) {
   const { qtyOf, add, setQty } = useCart();
   const qty = qtyOf(product.id);
+  const [liked, setLiked] = useState(false);
 
   return (
     <Pressable
       onPress={() => router.push(`/producto/${product.id}`)}
       style={[styles.card, width ? { width } : undefined]}
     >
-      <View style={[styles.thumb, { backgroundColor: product.color }]}>
-        <Text style={styles.emoji}>{product.emoji}</Text>
+      <View style={styles.thumbWrap}>
+        <ProductImage
+          product={product}
+          style={styles.thumb}
+          radius={radius.md}
+          iconSize={44}
+        />
+        <Pressable
+          hitSlop={8}
+          onPress={(e) => {
+            e.stopPropagation?.();
+            setLiked((v) => !v);
+          }}
+          style={styles.heart}
+        >
+          <Ionicons
+            name={liked ? 'heart' : 'heart-outline'}
+            size={18}
+            color={liked ? colors.red : colors.textMuted}
+          />
+        </Pressable>
         {product.hasPromo && (
           <View style={styles.promoTag}>
             <Ionicons name="pricetag" size={10} color="#fff" />
@@ -32,25 +53,24 @@ export default function ProductCard({ product, width }: Props) {
       <Text numberOfLines={2} style={styles.name}>
         {product.name}
       </Text>
-      <Text style={styles.unit}>{product.unit}</Text>
+      <Text style={styles.price}>{money(product.price)}</Text>
 
-      <View style={styles.bottomRow}>
-        <Text style={styles.price}>{money(product.price)}</Text>
-        {qty === 0 ? (
-          <Pressable
-            onPress={(e) => {
-              e.stopPropagation?.();
-              add(product.id);
-            }}
-            hitSlop={6}
-            style={styles.addBtn}
-          >
-            <Ionicons name="add" size={18} color="#fff" />
-          </Pressable>
-        ) : (
-          <QtyStepper qty={qty} onChange={(q) => setQty(product.id, q)} size="sm" />
-        )}
+      <Text style={styles.paqLabel}>Paquetes</Text>
+      <View style={styles.stepperRow}>
+        <QtyStepper qty={qty} onChange={(q) => setQty(product.id, q)} size="sm" />
       </View>
+
+      <Pressable
+        style={styles.addBtn}
+        onPress={(e) => {
+          e.stopPropagation?.();
+          add(product.id);
+        }}
+      >
+        <Text style={styles.addBtnText}>
+          {qty > 0 ? `Agrega ${qty} Paquete${qty === 1 ? '' : 's'}` : 'Agregar'}
+        </Text>
+      </Pressable>
     </Pressable>
   );
 }
@@ -62,15 +82,19 @@ const styles = StyleSheet.create({
     padding: 10,
     ...shadow.soft,
   },
-  thumb: {
-    height: 96,
-    borderRadius: radius.md,
+  thumbWrap: { marginBottom: 8 },
+  thumb: { height: 110 },
+  heart: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 28,
+    height: 28,
+    borderRadius: radius.pill,
+    backgroundColor: '#ffffffcc',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
-    overflow: 'hidden',
   },
-  emoji: { fontSize: 44 },
   promoTag: {
     position: 'absolute',
     top: 6,
@@ -91,20 +115,15 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     minHeight: 34,
   },
-  unit: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-  bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  price: { fontSize: 15, fontWeight: '800', color: colors.text },
+  price: { fontSize: 16, fontWeight: '900', color: colors.text, marginTop: 4 },
+  paqLabel: { fontSize: 11, color: colors.textMuted, marginTop: 8 },
+  stepperRow: { marginTop: 6, alignItems: 'flex-start' },
   addBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: radius.pill,
+    marginTop: 10,
     backgroundColor: colors.primary,
+    borderRadius: radius.pill,
+    paddingVertical: 10,
     alignItems: 'center',
-    justifyContent: 'center',
   },
+  addBtnText: { color: '#fff', fontWeight: '800', fontSize: 13 },
 });

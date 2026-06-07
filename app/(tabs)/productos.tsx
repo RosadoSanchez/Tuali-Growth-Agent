@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SearchBar from '../../components/SearchBar';
+import ItemImage from '../../components/ItemImage';
 import ProductCard from '../../components/ProductCard';
 import SectionHeader from '../../components/SectionHeader';
 import { categories, products } from '../../data/catalog';
@@ -35,7 +36,7 @@ export default function Categorias() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.h1}>Categorías</Text>
+        <Text style={styles.h1}>Productos</Text>
         <View style={{ marginTop: 12 }}>
           <SearchBar value={query} onChangeText={setQuery} />
         </View>
@@ -54,9 +55,15 @@ export default function Categorias() {
                 onPress={() => setSelected(active ? null : c.id)}
                 style={[styles.catItem, active && styles.catItemActive]}
               >
-                <View style={[styles.catThumb, { backgroundColor: c.color }]}>
-                  <Text style={styles.catEmoji}>{c.emoji}</Text>
-                </View>
+                <ItemImage
+                  image={c.image}
+                  icon={c.icon}
+                  iconColor={active ? colors.primary : colors.text}
+                  iconSize={30}
+                  bgColor={c.color}
+                  radius={radius.lg}
+                  style={styles.catThumb}
+                />
                 <Text
                   style={[styles.catName, active && { color: colors.primary }]}
                   numberOfLines={1}
@@ -110,7 +117,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...shadow.soft,
   },
-  catEmoji: { fontSize: 34 },
   catName: { fontSize: 12, fontWeight: '700', color: colors.text, marginTop: 6 },
   grid: {
     flexDirection: 'row',

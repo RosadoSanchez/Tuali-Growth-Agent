@@ -1,8 +1,10 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View, Dimensions } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, Image, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { featuredPromos } from '../data/catalog';
 import { colors, radius, shadow } from '../constants/theme';
+
+const PROMO_IMG = require('../assets/img/promo.png');
 
 const W = Dimensions.get('window').width;
 const CARD_W = W - 64;
@@ -35,8 +37,8 @@ export default function PromoCarousel() {
               <Ionicons name="arrow-forward" size={13} color={colors.primary} />
             </View>
           </View>
-          <View style={[styles.emojiWrap, { backgroundColor: p.color + '22' }]}>
-            <Text style={styles.emoji}>{p.emoji}</Text>
+          <View style={styles.iconWrap}>
+            <Image source={PROMO_IMG} style={styles.promoImg} resizeMode="contain" />
           </View>
         </View>
       ))}
@@ -71,12 +73,12 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
   cta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10 },
   ctaText: { color: colors.primary, fontWeight: '800', fontSize: 13 },
-  emojiWrap: {
+  iconWrap: {
     width: 72,
     height: 72,
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emoji: { fontSize: 38 },
+  promoImg: { width: 56, height: 56 },
 });

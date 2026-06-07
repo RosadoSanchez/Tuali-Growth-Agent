@@ -56,7 +56,7 @@ export const recommendations: Recommendation[] = [
     reason: 'Tu producto más vendido y se te agota cada viernes.',
     impact: '+$640 estimado',
     action: 'Agregar al pedido',
-    icon: '🥤',
+    icon: 'wine-outline',
     type: 'reorder',
   },
   {
@@ -65,7 +65,7 @@ export const recommendations: Recommendation[] = [
     reason: 'En tu zona el agua sube 35% en temporada de calor.',
     impact: '+8% en ticket',
     action: 'Activar promoción',
-    icon: '💧',
+    icon: 'water-outline',
     type: 'promo',
   },
   {
@@ -74,7 +74,7 @@ export const recommendations: Recommendation[] = [
     reason: 'Las botanas elevan el ticket en compras de refresco.',
     impact: '+$180 estimado',
     action: 'Ver loyalty',
-    icon: '🍿',
+    icon: 'fast-food-outline',
     type: 'loyalty',
   },
   {
@@ -83,7 +83,7 @@ export const recommendations: Recommendation[] = [
     reason: 'Tus clientes compran estos productos juntos el 62% de las veces.',
     impact: '+12% ticket promedio',
     action: 'Crear combo',
-    icon: '🧺',
+    icon: 'basket-outline',
     type: 'mix',
   },
 ];

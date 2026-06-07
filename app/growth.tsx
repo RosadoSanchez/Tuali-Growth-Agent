@@ -89,7 +89,7 @@ export default function Growth() {
                 <View key={r.id} style={styles.recCard}>
                   <View style={styles.recTop}>
                     <View style={styles.recIcon}>
-                      <Text style={{ fontSize: 22 }}>{r.icon}</Text>
+                      <Ionicons name={r.icon as any} size={22} color={colors.primary} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.recTitle}>{r.title}</Text>

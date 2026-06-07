@@ -23,6 +23,7 @@ export default function RootLayout() {
               options={{ presentation: 'card' }}
             />
             <Stack.Screen name="growth" />
+            <Stack.Screen name="carrito" options={{ presentation: 'card' }} />
           </Stack>
         </CartProvider>
       </SafeAreaProvider>

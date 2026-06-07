@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: radius.pill,
     paddingHorizontal: 14,
-    height: 44,
+    height: 40,
     borderWidth: 1,
     borderColor: colors.border,
   },

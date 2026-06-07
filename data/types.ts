@@ -1,3 +1,6 @@
+// Nombre de un ícono de Ionicons (usamos íconos en vez de emojis).
+export type IconName = string;
+
 export type Product = {
   id: string;
   name: string;
@@ -5,8 +8,9 @@ export type Product = {
   category: string;
   price: number;
   unit: string; // ej. "12 piezas", "Botella 1.5L"
-  emoji: string;
+  icon: IconName; // ícono de respaldo si no hay imagen local
   color: string; // color de fondo del tile
+  image?: any; // imagen local (require). Si no hay, se usa el ícono.
   hasPromo?: boolean;
   promoLabel?: string;
   loyaltyPoints?: number;
@@ -17,15 +21,18 @@ export type Product = {
 export type Category = {
   id: string;
   name: string;
-  emoji: string;
+  icon: IconName;
   color: string;
+  image?: any; // imagen local (require)
 };
 
 export type Brand = {
   id: string;
   name: string;
-  emoji: string;
+  icon: IconName;
   color: string;
+  image?: any; // logo local (require)
+  logoBg?: string; // fondo del chip cuando el logo lo necesita (ej. logo blanco)
 };
 
 export type OrderItem = {

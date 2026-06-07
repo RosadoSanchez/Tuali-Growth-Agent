@@ -3,10 +3,11 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { colors, radius, shadow } from '../../constants/theme';
-import { money } from '../../constants/format';
-import { useCart } from '../../context/CartContext';
-import QtyStepper from '../../components/QtyStepper';
+import { colors, radius, shadow } from '../constants/theme';
+import { money } from '../constants/format';
+import { useCart } from '../context/CartContext';
+import QtyStepper from '../components/QtyStepper';
+import ProductImage from '../components/ProductImage';
 
 export default function Carrito() {
   const { detailed, total, setQty, remove, count } = useCart();
@@ -15,10 +16,15 @@ export default function Carrito() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.h1}>Mi carrito</Text>
-        <Text style={styles.sub}>
-          {count} {count === 1 ? 'producto' : 'productos'}
-        </Text>
+        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
+        </Pressable>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.h1}>Mi carrito</Text>
+          <Text style={styles.sub}>
+            {count} {count === 1 ? 'producto' : 'productos'}
+          </Text>
+        </View>
       </View>
 
       {detailed.length === 0 ? (
@@ -40,9 +46,12 @@ export default function Carrito() {
           >
             {detailed.map(({ product, qty }) => (
               <View key={product.id} style={styles.line}>
-                <View style={[styles.thumb, { backgroundColor: product.color }]}>
-                  <Text style={{ fontSize: 30 }}>{product.emoji}</Text>
-                </View>
+                <ProductImage
+                  product={product}
+                  style={styles.thumb}
+                  radius={radius.md}
+                  iconSize={30}
+                />
                 <View style={{ flex: 1 }}>
                   <Text numberOfLines={2} style={styles.name}>
                     {product.name}
@@ -90,8 +99,22 @@ export default function Carrito() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.surface },
-  header: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 },
-  h1: { fontSize: 26, fontWeight: '900', color: colors.text },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingTop: 4,
+    paddingBottom: 8,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  h1: { fontSize: 24, fontWeight: '900', color: colors.text },
   sub: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
   line: {
     flexDirection: 'row',

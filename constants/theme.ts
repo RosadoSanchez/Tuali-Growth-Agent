@@ -1,25 +1,29 @@
-// Paleta de marca Túali (basada en la app y el branding de Arca Continental)
+// Paleta basada en la app real de Tuali (Arca Continental):
+// fondo blanco, acciones en morado, carrito/Gana/links en rojo.
 export const colors = {
-  // Marca Túali
-  primary: '#FF7A66', // coral Túali
-  primaryDark: '#E85C46',
-  primaryLight: '#FFB3A3',
+  // Color de acción (botones +, "Agregar X Paquetes")
+  primary: '#6D28D9',
+  primaryDark: '#5B21B6',
+  primaryLight: '#C9B6F2',
+
+  // Gradiente de marca Túali (splash / agente de crecimiento)
   gradientStart: '#FF8E73',
   gradientMid: '#FF9E86',
   gradientEnd: '#FFC2AE',
+  coral: '#FF7A66',
 
   // Acentos
-  red: '#E3000F', // rojo Coca-Cola / carrito
-  green: '#7CB342', // etiqueta verde (promos Gana)
-  greenLight: '#E7F3D8',
-  purple: '#6C4DEE',
+  red: '#ED1C24', // carrito, Gana, links ("Ver todos"), tab activo
+  green: '#34A853', // etiqueta verde (promos Gana)
+  greenLight: '#E3F4E6',
+  purple: '#6D28D9',
   yellow: '#FFC72C',
-  gana: '#E2231A', // rojo Gana
+  gana: '#ED1C24', // rojo Gana
 
   // Superficies
-  bg: '#FFFFFF',
+  bg: '#EFEFF1',
   surface: '#F6F5FA',
-  surfaceAlt: '#FBEFE9',
+  surfaceAlt: '#F2ECFB',
   card: '#FFFFFF',
   border: '#ECEAF2',
 

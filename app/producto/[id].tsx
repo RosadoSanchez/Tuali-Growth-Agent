@@ -9,6 +9,7 @@ import { productById, products } from '../../data/catalog';
 import { useCart } from '../../context/CartContext';
 import ProductCard from '../../components/ProductCard';
 import QtyStepper from '../../components/QtyStepper';
+import ProductImage from '../../components/ProductImage';
 
 export default function ProductoDetalle() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -43,8 +44,13 @@ export default function ProductoDetalle() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 24 }}
       >
-        <View style={[styles.hero, { backgroundColor: product.color }]}>
-          <Text style={{ fontSize: 120 }}>{product.emoji}</Text>
+        <View style={styles.heroWrap}>
+          <ProductImage
+            product={product}
+            style={styles.hero}
+            radius={radius.xl}
+            iconSize={120}
+          />
           {product.hasPromo && (
             <View style={styles.promo}>
               <Ionicons name="pricetag" size={12} color="#fff" />
@@ -111,7 +117,7 @@ export default function ProductoDetalle() {
         ) : (
           <View style={styles.footerRow}>
             <QtyStepper qty={qty} onChange={(q) => setQty(product.id, q)} />
-            <Pressable style={[styles.addBtn, { flex: 1 }]} onPress={() => router.push('/(tabs)/carrito')}>
+            <Pressable style={[styles.addBtn, { flex: 1 }]} onPress={() => router.push('/carrito')}>
               <Text style={styles.addText}>Ver carrito · {money(product.price * qty)}</Text>
             </Pressable>
           </View>
@@ -137,13 +143,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  hero: {
-    margin: 16,
-    borderRadius: radius.xl,
-    height: 260,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  heroWrap: { margin: 16 },
+  hero: { height: 260 },
   promo: {
     position: 'absolute',
     top: 14,

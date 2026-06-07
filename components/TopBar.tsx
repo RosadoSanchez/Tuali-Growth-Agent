@@ -10,28 +10,27 @@ export default function TopBar() {
   const { count } = useCart();
   return (
     <View style={styles.row}>
-      <View style={{ flex: 1 }}>
+      <Pressable style={{ flex: 1 }}>
         <View style={styles.storeRow}>
-          <Ionicons name="location" size={15} color={colors.primary} />
           <Text style={styles.store} numberOfLines={1}>
             {store.name}
           </Text>
-          <Ionicons name="chevron-down" size={14} color={colors.textMuted} />
+          <Ionicons name="chevron-down" size={14} color={colors.red} />
         </View>
-        <Text style={styles.location} numberOfLines={1}>
+        <Text style={styles.loc} numberOfLines={1}>
           {store.location}
         </Text>
-      </View>
+      </Pressable>
 
       <Pressable hitSlop={8} style={styles.iconBtn}>
-        <Ionicons name="heart-outline" size={22} color={colors.text} />
+        <Ionicons name="heart" size={20} color={colors.red} />
       </Pressable>
       <Pressable
         hitSlop={8}
-        style={styles.iconBtn}
-        onPress={() => router.push('/(tabs)/carrito')}
+        style={styles.cartBtn}
+        onPress={() => router.push('/carrito')}
       >
-        <Ionicons name="cart-outline" size={22} color={colors.text} />
+        <Ionicons name="cart" size={18} color="#fff" />
         {count > 0 && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{count}</Text>
@@ -45,32 +44,43 @@ export default function TopBar() {
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingHorizontal: 16,
-    paddingBottom: 8,
-    gap: 6,
+    paddingTop: 2,
+    paddingBottom: 6,
+    gap: 8,
   },
   storeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  store: { fontSize: 16, fontWeight: '800', color: colors.text, maxWidth: 200 },
-  location: { fontSize: 12, color: colors.textMuted, marginTop: 1, marginLeft: 19 },
+  store: { fontSize: 16, fontWeight: '800', color: colors.text, maxWidth: 210 },
+  loc: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
   iconBtn: {
-    width: 40,
-    height: 40,
+    width: 34,
+    height: 34,
     borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cartBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.pill,
+    backgroundColor: colors.red,
     alignItems: 'center',
     justifyContent: 'center',
   },
   badge: {
     position: 'absolute',
-    top: 4,
-    right: 2,
-    minWidth: 17,
-    height: 17,
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
     paddingHorizontal: 4,
     borderRadius: radius.pill,
-    backgroundColor: colors.red,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#fff',
   },
   badgeText: { color: '#fff', fontSize: 9, fontWeight: '800' },
 });
