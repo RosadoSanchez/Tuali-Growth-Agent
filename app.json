@@ -50,7 +50,7 @@
       "@config-plugins/react-native-webrtc"
     ],
     "extra": {
-      "apiUrl": "http://localhost:3000",
+      "apiUrl": "https://tuali-growth-agent-backend-production.up.railway.app",
       "elevenLabsAgentId": "agent_2401ktg0qhxdfgnvxrpehmf4hx5z"
     }
   }

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { API_URL } from '../../constants/config';
 import {
   View,
   Text,
@@ -17,7 +18,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 
-const API = "http://YourIP:3000"; // ← tu IP local
+
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 interface NotificationToggleProps {
@@ -70,7 +71,7 @@ export default function CapiTeAvisaScreen() {
   // ── Guardar preferencia de toggle en backend ──────────────────────────────
   const handleToggle = async (key: string, value: boolean) => {
     try {
-      await fetch(`${API}/api/whatsapp/preferences/${customerId}`, {
+      await fetch(`${API_URL}/api/whatsapp/preferences/${customerId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ [key]: value }),
@@ -96,7 +97,7 @@ export default function CapiTeAvisaScreen() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API}/api/whatsapp/connect`, {
+      const res = await fetch(`${API_URL}/api/whatsapp/connect`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

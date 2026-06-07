@@ -15,6 +15,7 @@ const extra = Constants.expoConfig?.extra as
   | undefined;
 
 export const API_URL = extra?.apiUrl ?? 'http://localhost:3000';
+console.log('🔗 API_URL:', API_URL);
 
 // ID del agente conversacional de ElevenLabs (Modo voz).
 // Pégalo en app.json -> expo.extra.elevenLabsAgentId.
