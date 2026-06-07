@@ -11,7 +11,22 @@ import { useAuth } from '../../context/AuthContext';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
-const MENU: { icon: IconName; label: string; sub?: string; route?: string }[] = [
+const MENU: {
+  icon: IconName;
+  label: string;
+  sub?: string;
+  route?: string;
+  iconBg?: string;
+  iconColor?: string;
+}[] = [
+  {
+    icon: 'logo-whatsapp',
+    label: 'Capi te avisa',
+    sub: 'Avisos por WhatsApp',
+    route: '/capiteavisascreen',
+    iconBg: '#25D366',
+    iconColor: '#fff',
+  },
   { icon: 'person-outline', label: 'Mi Perfil', sub: 'Datos de la tienda' },
   { icon: 'help-circle-outline', label: 'Soporte' },
   { icon: 'document-text-outline', label: 'Términos y condiciones' },
@@ -83,8 +98,8 @@ export default function Perfil() {
               onPress={() => m.route && router.push(m.route as any)}
               style={[styles.item, i < MENU.length - 1 && styles.itemBorder]}
             >
-              <View style={styles.itemIcon}>
-                <Ionicons name={m.icon} size={20} color={colors.primary} />
+              <View style={[styles.itemIcon, m.iconBg && { backgroundColor: m.iconBg }]}>
+                <Ionicons name={m.icon} size={20} color={m.iconColor ?? colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.itemLabel}>{m.label}</Text>
