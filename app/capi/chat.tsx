@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { colors, radius, shadow } from '../../constants/theme';
@@ -26,6 +26,7 @@ const GOALS = ['Subir mi ticket', 'Vender más', 'Ponme una meta'];
 export default function CapiChat() {
   const { customerId } = useAuth();
   const { add } = useCart();
+  const insets = useSafeAreaInsets();
   const { goal: initialGoal } = useLocalSearchParams<{ goal?: string }>();
 
   const [goal, setGoal] = useState<string>((initialGoal as string) || 'Vender más');
@@ -74,8 +75,11 @@ export default function CapiChat() {
             {loading ? 'armando tu jugada…' : 'tu coach de ventas'}
           </Text>
         </View>
+        <Pressable style={styles.hbtnWa} onPress={() => router.push('/capiteavisascreen')}>
+          <Ionicons name="logo-whatsapp" size={18} color="#fff" />
+        </Pressable>
         <Pressable style={styles.hbtn} onPress={() => router.push('/capi/marcador')}>
-          <Ionicons name="stats-chart" size={18} color={colors.primary} />
+          <Ionicons name="speedometer-outline" size={18} color={colors.primary} />
         </Pressable>
         <Pressable style={styles.hbtn} onPress={() => router.back()}>
           <Ionicons name="close" size={18} color={colors.textMuted} />
@@ -152,7 +156,6 @@ export default function CapiChat() {
       </ScrollView>
 
       {/* Cambiar de meta (Gemini) */}
-      <Text style={styles.chipLabel}>Pídele otra jugada:</Text>
       <View style={styles.chipRow}>
         {GOALS.map((g) => {
           const active = g === goal || (g === 'Subir mi ticket' && goal.startsWith('Subir'));
@@ -172,7 +175,7 @@ export default function CapiChat() {
       </View>
 
       {/* Conversar libre = por voz con el agente de ElevenLabs */}
-      <View style={styles.voiceBar}>
+      <View style={[styles.voiceBar, { paddingBottom: insets.bottom + 14 }]}>
         <Pressable style={styles.voiceBtn} onPress={() => router.push('/capi/voz')}>
           <Ionicons name="mic" size={22} color="#fff" />
           <Text style={styles.voiceText}>Hablar con Capi</Text>
@@ -202,6 +205,14 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: radius.pill,
     backgroundColor: colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hbtnWa: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.pill,
+    backgroundColor: '#25D366',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -263,13 +274,6 @@ const styles = StyleSheet.create({
   },
   activarDone: { backgroundColor: colors.green },
   activarText: { color: '#fff', fontWeight: '800', fontSize: 13 },
-  chipLabel: {
-    fontSize: 12,
-    color: colors.textMuted,
-    fontWeight: '700',
-    paddingHorizontal: 16,
-    marginBottom: 6,
-  },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',

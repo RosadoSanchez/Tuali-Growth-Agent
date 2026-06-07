@@ -30,7 +30,7 @@ export default function CapiFab() {
   );
 }
 
-const SIZE = 64;
+const SIZE = 82;
 
 const styles = StyleSheet.create({
   fab: {

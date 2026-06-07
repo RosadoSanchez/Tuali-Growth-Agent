@@ -4,6 +4,7 @@ import { API_URL } from '../../constants/config';
 import {
   View,
   Text,
+  Image,
   ScrollView,
   TouchableOpacity,
   Switch,
@@ -17,13 +18,13 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
-
+const CAPI = require('../../assets/img/capipfpbig.png');
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 interface NotificationToggleProps {
-  icon: string;
-  iconBg: string;
   title: string;
   subtitle: string;
   value: boolean;
@@ -32,12 +33,9 @@ interface NotificationToggleProps {
 
 // ─── Sub-componente: fila de toggle ──────────────────────────────────────────
 const NotificationToggle: React.FC<NotificationToggleProps> = ({
-  icon, iconBg, title, subtitle, value, onToggle,
+  title, subtitle, value, onToggle,
 }) => (
   <View style={styles.toggleRow}>
-    <View style={[styles.iconBox, { backgroundColor: iconBg }]}>
-      <Text style={styles.iconEmoji}>{icon}</Text>
-    </View>
     <View style={styles.toggleText}>
       <Text style={styles.toggleTitle}>{title}</Text>
       <Text style={styles.toggleSubtitle}>{subtitle}</Text>
@@ -119,7 +117,7 @@ export default function CapiTeAvisaScreen() {
         setWaConectado(true);
         setModalVisible(false);
         setTelefono('');
-        Alert.alert('¡Listo! 🎉', 'Revisa tu WhatsApp, Capi ya te escribió 📲');
+        Alert.alert('¡Listo!', 'Revisa tu WhatsApp, Capi ya te escribió.');
       } else {
         Alert.alert('Error', data.error || 'No se pudo conectar.');
       }
@@ -138,35 +136,23 @@ export default function CapiTeAvisaScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.capiAvatar}>
-            <Text style={styles.capiAvatarText}>🤖</Text>
+            <Image source={CAPI} style={styles.capiAvatarImg} resizeMode="cover" />
           </View>
-          <Text style={styles.headerTitle}>Capi te avisa 🔔</Text>
+          <Text style={styles.headerTitle}>Capi te avisa</Text>
         </View>
-        <TouchableOpacity style={styles.closeBtn} onPress={() => Alert.alert('Cerrar')}>
-          <Text style={styles.closeBtnText}>✕</Text>
+        <TouchableOpacity
+          style={styles.closeBtn}
+          onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
+        >
+          <Ionicons name="close" size={18} color="#666" />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* ── Mensaje de bienvenida ── */}
-        <View style={styles.card}>
-          <View style={styles.welcomeRow}>
-            <View style={styles.capiAvatarSmall}>
-              <Text style={styles.capiAvatarText}>🤖</Text>
-            </View>
-            <Text style={styles.welcomeText}>
-              Yo te aviso para que no se te pase ningún gol. ⚽
-            </Text>
-          </View>
-        </View>
-
         {/* ── Card WhatsApp ── */}
         <View style={styles.card}>
           <View style={styles.waRow}>
-            <View style={[styles.iconBox, { backgroundColor: '#25D366' }]}>
-              <Text style={styles.iconEmoji}>💬</Text>
-            </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.waTitle}>Recibe avisos por WhatsApp</Text>
               <Text style={styles.waSubtitle}>Capi te escribe como un cuate, en tu chat.</Text>
@@ -175,7 +161,7 @@ export default function CapiTeAvisaScreen() {
 
           {waConectado ? (
             <View style={styles.waConectadoBox}>
-              <Text style={styles.waConectadoText}>✅ WhatsApp conectado</Text>
+              <Text style={styles.waConectadoText}>WhatsApp conectado</Text>
             </View>
           ) : (
             <TouchableOpacity
@@ -183,13 +169,12 @@ export default function CapiTeAvisaScreen() {
               onPress={() => setModalVisible(true)}
               activeOpacity={0.85}
             >
-              <Text style={styles.waButtonIcon}>💬</Text>
+              <Ionicons name="logo-whatsapp" size={18} color="#fff" />
               <Text style={styles.waButtonText}>Conectar WhatsApp</Text>
             </TouchableOpacity>
           )}
 
           <View style={styles.appNotifsRow}>
-            <Text style={styles.appNotifsIcon}>📲</Text>
             <Text style={styles.appNotifsLabel}>Notificaciones de la app</Text>
             <Switch
               value={appNotifs}
@@ -206,7 +191,6 @@ export default function CapiTeAvisaScreen() {
           <Text style={styles.sectionTitle}>¿De qué te aviso?</Text>
 
           <NotificationToggle
-            icon="📦" iconBg="#F59E0B"
             title="Día de surtir"
             subtitle="Te recuerdo el día de tu pedido."
             value={diaDeRendir}
@@ -214,7 +198,6 @@ export default function CapiTeAvisaScreen() {
           />
           <View style={styles.divider} />
           <NotificationToggle
-            icon="🎯" iconBg="#EF4444"
             title="Avance de mi meta"
             subtitle="Cómo va tu marcador rumbo al gol."
             value={avanceMeta}
@@ -222,7 +205,6 @@ export default function CapiTeAvisaScreen() {
           />
           <View style={styles.divider} />
           <NotificationToggle
-            icon="🏷️" iconBg="#F97316"
             title="Promo por terminar"
             subtitle="Antes de que se acabe una promo."
             value={promoTerminar}
@@ -231,22 +213,25 @@ export default function CapiTeAvisaScreen() {
         </View>
 
         {/* ── Preview del aviso ── */}
-        <Text style={styles.previewLabel}>👀 Así se ve tu aviso</Text>
+        <Text style={styles.previewLabel}>Así se ve tu aviso</Text>
         <View style={styles.whatsappPreview}>
           <View style={styles.wpHeader}>
+            <Ionicons name="chevron-back" size={22} color="#fff" />
             <View style={styles.capiAvatarSmall}>
-              <Text style={styles.capiAvatarText}>🤖</Text>
+              <Image source={CAPI} style={styles.capiAvatarSmallImg} resizeMode="cover" />
             </View>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.wpHeaderName}>Capi</Text>
               <Text style={styles.wpHeaderStatus}>en línea</Text>
             </View>
+            <Ionicons name="call" size={20} color="#fff" />
           </View>
           <View style={styles.wpBody}>
             <View style={styles.wpBubble}>
               <Text style={styles.wpBubbleText}>
-                ¡Hola, Valeria! Hoy toca surtir para no quedarte sin tus más vendidos. Vamos por ese gol ⚽
+                ¡Hola, Valeria! Hoy toca surtir para no quedarte sin tus más vendidos. Vamos por ese gol.
               </Text>
+              <Text style={styles.wpBubbleTime}>8:00 a.m.</Text>
             </View>
           </View>
         </View>
@@ -265,14 +250,14 @@ export default function CapiTeAvisaScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>¿A qué número te aviso? 📲</Text>
+            <Text style={styles.modalTitle}>¿A qué número te aviso?</Text>
             <Text style={styles.modalSubtitle}>
               Capi te mandará un mensaje de bienvenida para confirmar.
             </Text>
 
             <View style={styles.inputRow}>
               <View style={styles.inputPrefix}>
-                <Text style={styles.inputPrefixText}>🇲🇽 +52</Text>
+                <Text style={styles.inputPrefixText}>+52</Text>
               </View>
               <TextInput
                 style={styles.input}
@@ -295,7 +280,7 @@ export default function CapiTeAvisaScreen() {
               {loading
                 ? <ActivityIndicator color="#fff" />
                 : <>
-                    <Text style={styles.waButtonIcon}>💬</Text>
+                    <Ionicons name="logo-whatsapp" size={18} color="#fff" />
                     <Text style={styles.waButtonText}>Confirmar y conectar</Text>
                   </>
               }
@@ -332,15 +317,16 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 20, fontWeight: '700', color: '#1A1A2E' },
   capiAvatar: {
     width: 44, height: 44, borderRadius: 22, backgroundColor: '#fff',
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
     borderWidth: 2, borderColor: '#E53E3E',
   },
+  capiAvatarImg: { width: 40, height: 40, borderRadius: 20 },
   capiAvatarSmall: {
     width: 36, height: 36, borderRadius: 18, backgroundColor: '#fff',
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
     borderWidth: 2, borderColor: '#E53E3E',
   },
-  capiAvatarText: { fontSize: 18 },
+  capiAvatarSmallImg: { width: 32, height: 32, borderRadius: 16 },
   closeBtn: {
     width: 36, height: 36, borderRadius: 18,
     backgroundColor: '#E5E0F0', alignItems: 'center', justifyContent: 'center',
@@ -353,9 +339,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 }, elevation: 2, gap: 12,
   },
 
-  welcomeRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  welcomeText: { flex: 1, fontSize: 15, color: '#374151', lineHeight: 22 },
-
   waRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   waTitle: { fontSize: 15, fontWeight: '700', color: '#1A1A2E' },
   waSubtitle: { fontSize: 13, color: '#6B7280', marginTop: 2 },
@@ -364,7 +347,6 @@ const styles = StyleSheet.create({
     backgroundColor: GREEN, borderRadius: 14, paddingVertical: 14,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
   },
-  waButtonIcon: { fontSize: 18 },
   waButtonText: { color: WHITE, fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
 
   waConectadoBox: {
@@ -374,13 +356,10 @@ const styles = StyleSheet.create({
   waConectadoText: { color: '#16A34A', fontSize: 15, fontWeight: '600' },
 
   appNotifsRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  appNotifsIcon: { fontSize: 18 },
   appNotifsLabel: { flex: 1, fontSize: 14, color: '#374151', fontWeight: '500' },
 
   sectionTitle: { fontSize: 17, fontWeight: '700', color: '#1A1A2E', marginBottom: 4 },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconBox: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  iconEmoji: { fontSize: 20 },
   toggleText: { flex: 1 },
   toggleTitle: { fontSize: 14, fontWeight: '700', color: '#1A1A2E' },
   toggleSubtitle: { fontSize: 12, color: '#6B7280', marginTop: 2, lineHeight: 16 },
@@ -405,6 +384,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, elevation: 1,
   },
   wpBubbleText: { fontSize: 14, color: '#1A1A2E', lineHeight: 20 },
+  wpBubbleTime: { fontSize: 10, color: '#9CA3AF', alignSelf: 'flex-end', marginTop: 4 },
 
   // Modal
   modalOverlay: {
