@@ -78,8 +78,8 @@ export default function CapiOnboarding() {
           </Pressable>
 
           <Pressable style={styles.option} onPress={() => router.replace('/capi/marcador')}>
-            <View style={[styles.optIcon, { backgroundColor: '#E3F4E6' }]}>
-              <Ionicons name="stats-chart" size={22} color={colors.green} />
+            <View style={[styles.optIcon, { backgroundColor: colors.surfaceAlt }]}>
+              <Ionicons name="speedometer-outline" size={22} color={colors.primary} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.optTitle}>Mi marcador</Text>

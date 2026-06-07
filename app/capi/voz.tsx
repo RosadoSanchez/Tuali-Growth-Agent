@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
+  Easing,
   Image,
   Pressable,
   ScrollView,
@@ -62,6 +64,40 @@ function VozInner() {
   const active = connected || connecting;
   const isSpeaking = !!conversation.isSpeaking;
 
+  // Pulso de los círculos rojos: se anima en loop mientras Capi habla
+  // (scale + opacity) y se detiene/resetea cuando termina.
+  const pulse = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    let loop: Animated.CompositeAnimation | undefined;
+    if (isSpeaking) {
+      loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulse, {
+            toValue: 1,
+            duration: 850,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulse, {
+            toValue: 0,
+            duration: 850,
+            easing: Easing.in(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      loop.start();
+    } else {
+      pulse.stopAnimation(() => pulse.setValue(0));
+    }
+    return () => loop?.stop();
+  }, [isSpeaking, pulse]);
+
+  const pulseScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.18] });
+  const ring1Opacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.18, 0.42] });
+  const ring2Opacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.1, 0.26] });
+  const ring3Opacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.06, 0.16] });
+
   const start = () => {
     if (active) return;
     try {
@@ -102,7 +138,6 @@ function VozInner() {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Text style={styles.htitle}>Hablar con Capi</Text>
         <Pressable style={styles.hbtn} onPress={() => router.back()}>
           <Ionicons name="close" size={18} color={colors.textMuted} />
         </Pressable>
@@ -110,9 +145,19 @@ function VozInner() {
 
       {/* Avatar */}
       <View style={styles.avatarWrap}>
-        {active && <View style={[styles.pulse, styles.pulse3]} />}
-        {active && <View style={[styles.pulse, styles.pulse2]} />}
-        <View style={[styles.pulse, styles.pulse1, isSpeaking && styles.pulseActive]} />
+        {active && (
+          <Animated.View
+            style={[styles.pulse, styles.pulse3, { opacity: ring3Opacity, transform: [{ scale: pulseScale }] }]}
+          />
+        )}
+        {active && (
+          <Animated.View
+            style={[styles.pulse, styles.pulse2, { opacity: ring2Opacity, transform: [{ scale: pulseScale }] }]}
+          />
+        )}
+        <Animated.View
+          style={[styles.pulse, styles.pulse1, { opacity: ring1Opacity, transform: [{ scale: pulseScale }] }]}
+        />
         <Image source={CAPI} style={styles.capi} />
       </View>
 
@@ -175,7 +220,6 @@ export default function CapiVoz() {
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.header}>
-          <Text style={styles.htitle}>Hablar con Capi</Text>
           <Pressable style={styles.hbtn} onPress={() => router.back()}>
             <Ionicons name="close" size={18} color={colors.textMuted} />
           </Pressable>
@@ -203,11 +247,10 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
-  htitle: { fontSize: 16, fontWeight: '900', color: colors.text },
   hbtn: {
     width: 36,
     height: 36,
@@ -227,7 +270,6 @@ const styles = StyleSheet.create({
   pulse1: { width: 130, height: 130, opacity: 0.18 },
   pulse2: { width: 165, height: 165, opacity: 0.1 },
   pulse3: { width: 195, height: 195, opacity: 0.06 },
-  pulseActive: { opacity: 0.32 },
   capi: { width: 110, height: 110 },
   statusPill: {
     flexDirection: 'row',

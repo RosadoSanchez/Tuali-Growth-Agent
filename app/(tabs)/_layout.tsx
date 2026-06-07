@@ -19,7 +19,6 @@ const TABS: {
   { name: 'productos',         label: 'Productos', icon: 'apps-outline',      iconActive: 'apps'      },
   { name: 'gana',              label: 'Gana',      icon: 'star-outline',      iconActive: 'star'      },
   { name: 'pedidos',           label: 'Pedidos',   icon: 'bookmark-outline',  iconActive: 'bookmark'  },
-  { name: 'capiteavisascreen', label: 'WhatsApp',  icon: 'logo-whatsapp',     iconActive: 'logo-whatsapp' },
   { name: 'menu',              label: 'Menú',      icon: 'menu-outline',      iconActive: 'menu'      },
 ];
 

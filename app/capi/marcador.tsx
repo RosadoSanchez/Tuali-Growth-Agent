@@ -148,7 +148,7 @@ export default function CapiMarcador() {
         )}
 
         {/* Qué funcionó */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.greenLight }]}>
           <View style={styles.titleRow}>
             <Ionicons name="checkmark-circle" size={18} color={colors.green} />
             <Text style={[styles.cardTitle, { color: colors.green }]}>Qué funcionó</Text>
@@ -165,7 +165,7 @@ export default function CapiMarcador() {
 
         {/* Qué ajustar */}
         {whatToAdjust.length > 0 && (
-          <View style={[styles.card, { borderColor: '#F4C84A', borderWidth: 1 }]}>
+          <View style={[styles.card, { backgroundColor: '#FBF0D2' }]}>
             <View style={styles.titleRow}>
               <Ionicons name="build" size={16} color="#C9971A" />
               <Text style={[styles.cardTitle, { color: '#C9971A' }]}>Qué ajustar</Text>
