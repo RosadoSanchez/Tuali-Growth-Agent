@@ -1,14 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,90 +14,53 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { colors, radius, shadow } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
-import { agentChat, ChatTurn, Jugada } from '../../services/api';
+import { agentChat, Jugada } from '../../services/api';
 
 const CAPI_PFP = require('../../assets/img/capipfpbig.png');
 const CAPI_REPLY = require('../../assets/img/capichatreply.png');
 
-type Msg = { id: string; from: 'capi' | 'user'; text: string };
-
-const CHIPS = ['Subir mi ticket', 'Vender más', 'Ponme una meta'];
+// Metas predeterminadas: cada una le pide a Gemini una jugada nueva.
+// Esto NO es un chat de escribir: son botones que regeneran la jugada.
+const GOALS = ['Subir mi ticket', 'Vender más', 'Ponme una meta'];
 
 export default function CapiChat() {
   const { customerId } = useAuth();
   const { add } = useCart();
-  const { goal } = useLocalSearchParams<{ goal?: string }>();
+  const { goal: initialGoal } = useLocalSearchParams<{ goal?: string }>();
 
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const [goal, setGoal] = useState<string>((initialGoal as string) || 'Vender más');
+  const [reply, setReply] = useState('');
   const [jugada, setJugada] = useState<Jugada | null>(null);
   const [activated, setActivated] = useState<Record<string, boolean>>({});
-  const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
-  const scrollRef = useRef<ScrollView>(null);
 
-  const scrollDown = () =>
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
-
-  // Primer saludo + jugada al abrir (un solo flujo, cero clics extra).
-  useEffect(() => {
+  // Pide la jugada a Gemini para la meta elegida.
+  const loadJugada = async (g: string) => {
     if (!customerId) return;
-    (async () => {
-      try {
-        const res = await agentChat(customerId, { goal: goal as string });
-        setMessages([{ id: 'm0', from: 'capi', text: res.reply }]);
-        setJugada(res.jugada);
-      } catch (e: any) {
-        setMessages([
-          {
-            id: 'err',
-            from: 'capi',
-            text: `No pude conectarme 😕 (${e.message})`,
-          },
-        ]);
-      } finally {
-        setLoading(false);
-        scrollDown();
-      }
-    })();
-  }, [customerId]);
-
-  const send = async (t: string) => {
-    const v = t.trim();
-    if (!v || sending || !customerId) return;
-
-    const userMsg: Msg = { id: `u${messages.length}`, from: 'user', text: v };
-    setMessages((prev) => [...prev, userMsg]);
-    setText('');
-    setSending(true);
-    scrollDown();
-
+    setGoal(g);
+    setLoading(true);
+    setActivated({});
     try {
-      const history: ChatTurn[] = [...messages, userMsg].map((m) => ({
-        from: m.from,
-        text: m.text,
-      }));
-      const res = await agentChat(customerId, { message: v, goal: goal as string, history });
-      setMessages((prev) => [
-        ...prev,
-        { id: `c${prev.length}`, from: 'capi', text: res.reply },
-      ]);
-      if (res.jugada) setJugada(res.jugada);
+      const res = await agentChat(customerId, { goal: g });
+      setReply(res.reply);
+      setJugada(res.jugada);
     } catch (e: any) {
-      setMessages((prev) => [
-        ...prev,
-        { id: `e${prev.length}`, from: 'capi', text: `Ups, fallé: ${e.message}` },
-      ]);
+      setReply(`No pude conectarme 😕 (${e.message})`);
+      setJugada(null);
     } finally {
-      setSending(false);
-      scrollDown();
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadJugada(goal);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerId]);
 
   // Un solo tap: activar el movimiento (y si es pedido, va al carrito).
   const activate = (key: string, type: string) => {
     setActivated((prev) => ({ ...prev, [key]: true }));
-    if (type === 'reorder') add('p1', 1); // sugerido al carrito
+    if (type === 'reorder') add('p1', 1);
   };
 
   return (
@@ -111,7 +71,7 @@ export default function CapiChat() {
         <View style={{ flex: 1 }}>
           <Text style={styles.hname}>Capi</Text>
           <Text style={styles.status}>
-            {sending ? 'escribiendo…' : 'armando tu jugada'}
+            {loading ? 'armando tu jugada…' : 'tu coach de ventas'}
           </Text>
         </View>
         <Pressable style={styles.hbtn} onPress={() => router.push('/capi/marcador')}>
@@ -122,129 +82,102 @@ export default function CapiChat() {
         </Pressable>
       </View>
 
-      <KeyboardAvoidingView
+      <ScrollView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={8}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: 16, paddingBottom: 8, gap: 14 }}
       >
-        <ScrollView
-          ref={scrollRef}
-          style={{ flex: 1 }}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ padding: 16, paddingBottom: 8, gap: 14 }}
-        >
-          {loading && (
+        {/* Meta actual */}
+        <View style={styles.goalTag}>
+          <Ionicons name="flag" size={13} color={colors.red} />
+          <Text style={styles.goalTagText}>{goal}</Text>
+        </View>
+
+        {loading ? (
+          <View style={styles.capiRow}>
+            <Image source={CAPI_REPLY} style={styles.replyPfp} />
+            <View style={styles.capiBubble}>
+              <ActivityIndicator color={colors.red} />
+            </View>
+          </View>
+        ) : (
+          !!reply && (
             <View style={styles.capiRow}>
               <Image source={CAPI_REPLY} style={styles.replyPfp} />
               <View style={styles.capiBubble}>
-                <ActivityIndicator color={colors.red} />
+                <Text style={styles.capiText}>{reply}</Text>
               </View>
             </View>
-          )}
+          )
+        )}
 
-          {messages.map((m) =>
-            m.from === 'capi' ? (
-              <View key={m.id} style={styles.capiRow}>
-                <Image source={CAPI_REPLY} style={styles.replyPfp} />
-                <View style={styles.capiBubble}>
-                  <Text style={styles.capiText}>{m.text}</Text>
-                </View>
+        {/* Tarjeta de jugada (Gemini) */}
+        {!loading && jugada && (
+          <View style={styles.jugada}>
+            <View style={styles.jugadaHead}>
+              <Image source={CAPI_REPLY} style={styles.replyPfp} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.jugadaTitle}>{jugada.title}</Text>
+                <Text style={styles.jugadaSub}>{jugada.sub}</Text>
               </View>
-            ) : (
-              <View key={m.id} style={styles.userRow}>
-                <View style={styles.userBubble}>
-                  <Text style={styles.userText}>{m.text}</Text>
-                </View>
-              </View>
-            )
-          )}
+            </View>
 
-          {/* Tarjeta de jugada (dinámica) */}
-          {jugada && (
-            <View style={styles.jugada}>
-              <View style={styles.jugadaHead}>
-                <Image source={CAPI_REPLY} style={styles.replyPfp} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.jugadaTitle}>{jugada.title}</Text>
-                  <Text style={styles.jugadaSub}>{jugada.sub}</Text>
-                </View>
-              </View>
-
-              {jugada.moves.map((mv, i) => {
-                const key = `mv${i}`;
-                const done = activated[key];
-                return (
-                  <View key={key} style={styles.reto}>
-                    <View style={styles.retoTagRow}>
-                      <View style={styles.retoIcon}>
-                        <Ionicons name="disc" size={16} color="#fff" />
-                      </View>
-                      <Text style={styles.retoTag}>{mv.tag}</Text>
-                      {!!mv.impact && <Text style={styles.impact}>{mv.impact}</Text>}
+            {jugada.moves.map((mv, i) => {
+              const key = `mv${i}`;
+              const done = activated[key];
+              return (
+                <View key={key} style={styles.reto}>
+                  <View style={styles.retoTagRow}>
+                    <View style={styles.retoIcon}>
+                      <Ionicons name="disc" size={16} color="#fff" />
                     </View>
-                    <Text style={styles.retoTitle}>{mv.title}</Text>
-                    <Text style={styles.retoDesc}>{mv.desc}</Text>
-                    <Pressable
-                      style={[styles.activar, done && styles.activarDone]}
-                      onPress={() => activate(key, mv.type)}
-                      disabled={done}
-                    >
-                      <Ionicons
-                        name={done ? 'checkmark' : 'flash'}
-                        size={15}
-                        color="#fff"
-                      />
-                      <Text style={styles.activarText}>
-                        {done ? 'Activado' : mv.cta}
-                      </Text>
-                    </Pressable>
+                    <Text style={styles.retoTag}>{mv.tag}</Text>
+                    {!!mv.impact && <Text style={styles.impact}>{mv.impact}</Text>}
                   </View>
-                );
-              })}
-            </View>
-          )}
+                  <Text style={styles.retoTitle}>{mv.title}</Text>
+                  <Text style={styles.retoDesc}>{mv.desc}</Text>
+                  <Pressable
+                    style={[styles.activar, done && styles.activarDone]}
+                    onPress={() => activate(key, mv.type)}
+                    disabled={done}
+                  >
+                    <Ionicons name={done ? 'checkmark' : 'flash'} size={15} color="#fff" />
+                    <Text style={styles.activarText}>{done ? 'Activado' : mv.cta}</Text>
+                  </Pressable>
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </ScrollView>
 
-          {sending && (
-            <View style={styles.capiRow}>
-              <Image source={CAPI_REPLY} style={styles.replyPfp} />
-              <View style={styles.capiBubble}>
-                <ActivityIndicator color={colors.red} />
-              </View>
-            </View>
-          )}
-        </ScrollView>
-
-        {/* Quick chips */}
-        <View style={styles.chipRow}>
-          {CHIPS.map((c) => (
-            <Pressable key={c} style={styles.chip} onPress={() => send(c)}>
-              <Text style={styles.chipText} numberOfLines={1}>
-                {c}
+      {/* Cambiar de meta (Gemini) */}
+      <Text style={styles.chipLabel}>Pídele otra jugada:</Text>
+      <View style={styles.chipRow}>
+        {GOALS.map((g) => {
+          const active = g === goal || (g === 'Subir mi ticket' && goal.startsWith('Subir'));
+          return (
+            <Pressable
+              key={g}
+              style={[styles.chip, active && styles.chipActive]}
+              onPress={() => loadJugada(g)}
+              disabled={loading}
+            >
+              <Text style={[styles.chipText, active && styles.chipTextActive]} numberOfLines={1}>
+                {g}
               </Text>
             </Pressable>
-          ))}
-        </View>
+          );
+        })}
+      </View>
 
-        {/* Input */}
-        <View style={styles.inputBar}>
-          <View style={styles.inputWrap}>
-            <Ionicons name="happy-outline" size={20} color={colors.textMuted} />
-            <TextInput
-              value={text}
-              onChangeText={setText}
-              placeholder="Escríbele a Capi..."
-              placeholderTextColor={colors.textMuted}
-              style={styles.input}
-              onSubmitEditing={() => send(text)}
-              returnKeyType="send"
-              editable={!sending}
-            />
-          </View>
-          <Pressable style={styles.micBtn} onPress={() => router.push('/capi/voz')}>
-            <Ionicons name="mic" size={20} color="#fff" />
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
+      {/* Conversar libre = por voz con el agente de ElevenLabs */}
+      <View style={styles.voiceBar}>
+        <Pressable style={styles.voiceBtn} onPress={() => router.push('/capi/voz')}>
+          <Ionicons name="mic" size={22} color="#fff" />
+          <Text style={styles.voiceText}>Hablar con Capi</Text>
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
@@ -263,8 +196,6 @@ const styles = StyleSheet.create({
   },
   hpfp: { width: 40, height: 40, borderRadius: radius.pill },
   hname: { fontSize: 16, fontWeight: '900', color: colors.text },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 1 },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.success },
   status: { fontSize: 12, color: colors.textMuted },
   hbtn: {
     width: 36,
@@ -274,6 +205,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  goalTag: {
+    flexDirection: 'row',
+    alignSelf: 'flex-start',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FBE3E3',
+    borderRadius: radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  goalTagText: { fontSize: 12, fontWeight: '800', color: colors.red },
   capiRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, maxWidth: '88%' },
   replyPfp: { width: 30, height: 30, borderRadius: radius.pill },
   capiBubble: {
@@ -285,22 +227,7 @@ const styles = StyleSheet.create({
     ...shadow.soft,
   },
   capiText: { fontSize: 14, color: colors.text, lineHeight: 19 },
-  userRow: { alignItems: 'flex-end' },
-  userBubble: {
-    maxWidth: '85%',
-    backgroundColor: colors.red,
-    borderRadius: radius.lg,
-    borderTopRightRadius: 4,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  userText: { fontSize: 14, color: '#fff', fontWeight: '600', lineHeight: 19 },
-  jugada: {
-    backgroundColor: '#fff',
-    borderRadius: radius.lg,
-    padding: 14,
-    ...shadow.card,
-  },
+  jugada: { backgroundColor: '#fff', borderRadius: radius.lg, padding: 14, ...shadow.card },
   jugadaHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   jugadaTitle: { fontSize: 15, fontWeight: '900', color: colors.text },
   jugadaSub: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
@@ -336,12 +263,19 @@ const styles = StyleSheet.create({
   },
   activarDone: { backgroundColor: colors.green },
   activarText: { color: '#fff', fontWeight: '800', fontSize: 13 },
+  chipLabel: {
+    fontSize: 12,
+    color: colors.textMuted,
+    fontWeight: '700',
+    paddingHorizontal: 16,
+    marginBottom: 6,
+  },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     paddingHorizontal: 16,
     gap: 8,
-    paddingBottom: 8,
+    paddingBottom: 10,
   },
   chip: {
     borderWidth: 1,
@@ -351,34 +285,26 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     backgroundColor: '#fff',
   },
+  chipActive: { backgroundColor: colors.red },
   chipText: { color: colors.red, fontWeight: '700', fontSize: 12 },
-  inputBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  chipTextActive: { color: '#fff' },
+  voiceBar: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 14,
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
-  inputWrap: {
-    flex: 1,
+  voiceBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radius.pill,
-    paddingHorizontal: 14,
-    height: 44,
-  },
-  input: { flex: 1, fontSize: 14, color: colors.text },
-  micBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.pill,
-    backgroundColor: colors.red,
-    alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.red,
+    borderRadius: radius.pill,
+    paddingVertical: 14,
+    ...shadow.soft,
   },
+  voiceText: { color: '#fff', fontWeight: '800', fontSize: 15 },
 });

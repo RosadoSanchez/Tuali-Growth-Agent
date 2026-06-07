@@ -3,13 +3,20 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@config-plugins/react-native-webrtc": "^15.0.1",
+    "@elevenlabs/react-native": "^1.2.4",
     "@expo/vector-icons": "^15.1.1",
+    "@livekit/react-native": "^2.11.0",
+    "@livekit/react-native-expo-plugin": "^1.0.2",
+    "@livekit/react-native-webrtc": "^144.1.0",
     "expo": "~56.0.9",
     "expo-constants": "~56.0.17",
+    "expo-dev-client": "*",
     "expo-linear-gradient": "~56.0.4",
     "expo-linking": "~56.0.13",
     "expo-router": "~56.2.9",
     "expo-status-bar": "~56.0.4",
+    "livekit-client": "^2.19.1",
     "react": "19.2.3",
     "react-native": "0.85.3",
     "react-native-gesture-handler": "~2.31.1",
@@ -23,8 +30,8 @@
   },
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web"
   },
   "private": true
