@@ -91,12 +91,16 @@ export default function CapiTeAvisaScreen() {
     }
 
     // Agrega 52 si no tiene código de país
-    const phoneCompleto = soloDigitos.startsWith('52')
-      ? soloDigitos
-      : `52${soloDigitos}`;
+    const phoneCompleto = soloDigitos.startsWith('521')
+    ? soloDigitos
+    : soloDigitos.startsWith('52')
+    ? `521${soloDigitos.slice(2)}`
+    : `521${soloDigitos}`;
 
     setLoading(true);
     try {
+      console.log('🔗 Llamando a:', `${API_URL}/api/whatsapp/connect`);
+      console.log('📱 Phone:', phoneCompleto);
       const res = await fetch(`${API_URL}/api/whatsapp/connect`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -108,6 +112,8 @@ export default function CapiTeAvisaScreen() {
       });
 
       const data = await res.json();
+      console.log('📨 Respuesta:', JSON.stringify(data));
+      console.log('📊 Status:', res.status);
 
       if (data.success) {
         setWaConectado(true);
