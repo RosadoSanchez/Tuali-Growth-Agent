@@ -35,6 +35,7 @@ export default function RootLayout() {
             <Stack.Screen name="capi/marcador" options={{ presentation: 'card' }} />
             <Stack.Screen name="capi/voz" options={{ presentation: 'modal' }} />
           </Stack>
+          <ElevenFloatingButton />
         </CartProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
