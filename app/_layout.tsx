@@ -41,6 +41,9 @@ function AuthGate() {
         options={{
           presentation: 'transparentModal',
           animation: 'slide_from_bottom',
+          // El contentStyle global pinta fondo opaco; aquí lo hacemos
+          // transparente para que el backdrop deje ver la pantalla de atrás.
+          contentStyle: { backgroundColor: 'transparent' },
         }}
       />
       <Stack.Screen name="capi/chat" options={{ presentation: 'card' }} />
