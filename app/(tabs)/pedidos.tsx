@@ -1,11 +1,29 @@
-import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, shadow } from '../../constants/theme';
-import { money, monthYear } from '../../constants/format';
-import { orders, statusLabel } from '../../data/orders';
-import { Order } from '../../data/types';
+import { money } from '../../constants/format';
+import {
+  normalizeStatus,
+  statusKindColor,
+  statusKindLabel,
+  toNumber,
+} from '../../constants/orderStatus';
+import {
+  BackendOrder,
+  OrderDetailLine,
+  fetchCustomerOrders,
+  fetchOrderDetails,
+} from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import BrandChips from '../../components/BrandChips';
 
 const FILTERS = [
@@ -15,40 +33,77 @@ const FILTERS = [
   { id: 'cancelado', label: 'Cancelados' },
 ] as const;
 
-const statusColor: Record<Order['status'], string> = {
-  entregado: colors.green,
-  en_camino: '#2D7FF9',
-  preparando: colors.yellow,
-  cancelado: colors.red,
-};
-
-const shortDate = (iso: string) => {
-  const d = new Date(iso + 'T00:00:00');
-  const m = d.toLocaleDateString('es-MX', { month: 'short' }).replace('.', '');
-  return `${d.getDate()}/${m}/${d.getFullYear()}`;
-};
-
 export default function Pedidos() {
+  const { customerId } = useAuth();
   const [filter, setFilter] = useState<string>('todos');
 
-  const grouped = useMemo(() => {
-    const list = orders.filter((o) => {
+  const [orders, setOrders] = useState<BackendOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Detalle por pedido (carga perezosa al tocar "Ver detalle").
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [details, setDetails] = useState<Record<string, OrderDetailLine[]>>({});
+  const [loadingDetail, setLoadingDetail] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!customerId) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetchCustomerOrders(customerId);
+      setOrders(res.data ?? []);
+    } catch (e: any) {
+      setError(e.message ?? 'No se pudieron cargar los pedidos');
+    } finally {
+      setLoading(false);
+    }
+  }, [customerId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const orderId = (o: BackendOrder) =>
+    String(o.id_pedido ?? o['﻿id_pedido'] ?? '');
+
+  const filtered = useMemo(() => {
+    return orders.filter((o) => {
+      const kind = normalizeStatus(o.status_final);
       if (filter === 'todos') return true;
-      if (filter === 'activos') return o.status === 'en_camino' || o.status === 'preparando';
-      return o.status === filter;
+      if (filter === 'activos')
+        return kind === 'en_camino' || kind === 'preparando';
+      return kind === filter;
     });
-    const map: Record<string, Order[]> = {};
-    list.forEach((o) => {
-      const key = monthYear(o.date);
-      (map[key] ||= []).push(o);
-    });
-    return map;
-  }, [filter]);
+  }, [orders, filter]);
+
+  const toggleDetail = async (o: BackendOrder) => {
+    const id = orderId(o);
+    if (openId === id) {
+      setOpenId(null);
+      return;
+    }
+    setOpenId(id);
+    if (!details[id]) {
+      setLoadingDetail(id);
+      try {
+        const res = await fetchOrderDetails(id);
+        setDetails((p) => ({ ...p, [id]: res.data ?? [] }));
+      } catch {
+        setDetails((p) => ({ ...p, [id]: [] }));
+      } finally {
+        setLoadingDetail(null);
+      }
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.h1}>Pedidos Bokados</Text>
+        <Text style={styles.h1}>Mis pedidos</Text>
       </View>
 
       <ScrollView
@@ -81,31 +136,54 @@ export default function Pedidos() {
         </ScrollView>
 
         <View style={{ paddingHorizontal: 16, marginTop: 4 }}>
-          {Object.entries(grouped).map(([month, list]) => (
-            <View key={month} style={{ marginBottom: 18 }}>
+          {loading ? (
+            <View style={styles.center}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={styles.hint}>Cargando tus pedidos…</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.center}>
+              <Ionicons
+                name="cloud-offline-outline"
+                size={36}
+                color={colors.textMuted}
+              />
+              <Text style={styles.hint}>{error}</Text>
+              <Pressable style={styles.retry} onPress={load}>
+                <Text style={styles.retryText}>Reintentar</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <>
               <View style={styles.monthRow}>
-                <Text style={styles.month}>{month}</Text>
-                <Text style={styles.count}>{list.length} Pedidos</Text>
+                <Text style={styles.month}>Historial</Text>
+                <Text style={styles.count}>{filtered.length} pedidos</Text>
               </View>
 
-              {list.map((o) => {
-                const color = statusColor[o.status];
-                const cancel = o.status === 'cancelado';
+              {filtered.map((o) => {
+                const id = orderId(o);
+                const kind = normalizeStatus(o.status_final);
+                const color = statusKindColor[kind];
+                const cancel = kind === 'cancelado';
+                const isOpen = openId === id;
+                const lines = details[id];
                 return (
-                  <View key={o.id} style={styles.card}>
-                    <Text style={styles.orderNo}>No. de pedido: {o.folio}</Text>
+                  <View key={id} style={styles.card}>
+                    <Text style={styles.orderNo}>No. de pedido: {id}</Text>
 
                     <View style={styles.midRow}>
-                      <View style={styles.truck}>
+                      <View style={[styles.truck, { backgroundColor: color }]}>
                         <Ionicons name="cube" size={20} color="#fff" />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.qty}>
-                          {o.units} paquetes + 0 unidades
+                          {o.pais ? o.pais : 'Pedido'}
                         </Text>
-                        <Text style={styles.date}>Pedido el {shortDate(o.date)}</Text>
+                        <Text style={styles.date}>
+                          Subtotal {money(toNumber(o.SubTotal))}
+                        </Text>
                       </View>
-                      <Text style={styles.total}>{money(o.total)}</Text>
+                      <Text style={styles.total}>{money(toNumber(o.Total))}</Text>
                     </View>
 
                     <View style={styles.bottomRow}>
@@ -116,21 +194,59 @@ export default function Pedidos() {
                           color={color}
                         />
                         <Text style={[styles.status, { color }]}>
-                          {statusLabel[o.status]}
+                          {statusKindLabel[kind]}
                         </Text>
                       </View>
-                      <Pressable style={styles.detail} hitSlop={6}>
-                        <Text style={styles.detailText}>Ver detalle</Text>
-                        <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+                      <Pressable
+                        style={styles.detail}
+                        hitSlop={6}
+                        onPress={() => toggleDetail(o)}
+                      >
+                        <Text style={styles.detailText}>
+                          {isOpen ? 'Ocultar' : 'Ver detalle'}
+                        </Text>
+                        <Ionicons
+                          name={isOpen ? 'chevron-up' : 'chevron-forward'}
+                          size={14}
+                          color={colors.textMuted}
+                        />
                       </Pressable>
                     </View>
+
+                    {isOpen && (
+                      <View style={styles.detailBox}>
+                        {loadingDetail === id ? (
+                          <ActivityIndicator color={colors.primary} />
+                        ) : lines && lines.length > 0 ? (
+                          lines.map((l, i) => (
+                            <View key={l.id_linea ?? i} style={styles.lineRow}>
+                              <Text style={styles.lineName} numberOfLines={2}>
+                                {l.nombre_sku_solicitado ?? 'Producto'}
+                              </Text>
+                              <Text style={styles.lineQty}>
+                                x{toNumber(l.Quantity)}
+                              </Text>
+                            </View>
+                          ))
+                        ) : (
+                          <Text style={styles.hint}>
+                            Sin líneas para este pedido.
+                          </Text>
+                        )}
+                      </View>
+                    )}
                   </View>
                 );
               })}
-            </View>
-          ))}
-          {Object.keys(grouped).length === 0 && (
-            <Text style={styles.empty}>No tienes pedidos en este filtro.</Text>
+
+              {filtered.length === 0 && (
+                <Text style={styles.empty}>
+                  {customerId
+                    ? 'No tienes pedidos en este filtro.'
+                    : 'Inicia sesión para ver tus pedidos.'}
+                </Text>
+              )}
+            </>
           )}
         </View>
       </ScrollView>
@@ -156,6 +272,16 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.red, borderColor: colors.red },
   chipText: { fontSize: 13, fontWeight: '700', color: colors.textMuted },
   chipTextActive: { color: '#fff' },
+  center: { alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12 },
+  hint: { color: colors.textMuted, fontSize: 14, textAlign: 'center' },
+  retry: {
+    marginTop: 4,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 22,
+    paddingVertical: 11,
+    borderRadius: radius.pill,
+  },
+  retryText: { color: '#fff', fontWeight: '800', fontSize: 14 },
   monthRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -197,5 +323,20 @@ const styles = StyleSheet.create({
   status: { fontSize: 13, fontWeight: '800' },
   detail: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   detailText: { fontSize: 13, fontWeight: '700', color: colors.textMuted },
+  detailBox: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: 12,
+    gap: 8,
+  },
+  lineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  lineName: { flex: 1, fontSize: 13, color: colors.text },
+  lineQty: { fontSize: 13, fontWeight: '800', color: colors.primary },
   empty: { textAlign: 'center', color: colors.textMuted, marginTop: 40 },
 });

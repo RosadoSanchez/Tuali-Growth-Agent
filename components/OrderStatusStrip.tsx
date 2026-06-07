@@ -1,22 +1,44 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { orders, statusLabel } from '../data/orders';
 import { colors, radius, shadow } from '../constants/theme';
+import {
+  normalizeStatus,
+  statusKindColor,
+  statusKindLabel,
+} from '../constants/orderStatus';
+import { BackendOrder, fetchCustomerOrders } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
-const STATUS_COLOR: Record<string, string> = {
-  entregado: colors.green,
-  en_camino: '#2D7FF9',
-  preparando: colors.yellow,
-  cancelado: colors.red,
-};
-
-// Tira con el estado del último pedido en el Home.
+// Tira con el estado del último pedido real del cliente en el Home.
 export default function OrderStatusStrip() {
-  const o = orders[0];
-  if (!o) return null;
-  const color = STATUS_COLOR[o.status] ?? colors.green;
+  const { customerId } = useAuth();
+  const [order, setOrder] = useState<BackendOrder | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    if (!customerId) {
+      setOrder(null);
+      return;
+    }
+    fetchCustomerOrders(customerId)
+      .then((res) => {
+        if (!alive) return;
+        const list = res.data ?? [];
+        setOrder(list.length ? list[list.length - 1] : null);
+      })
+      .catch(() => alive && setOrder(null));
+    return () => {
+      alive = false;
+    };
+  }, [customerId]);
+
+  if (!order) return null;
+
+  const kind = normalizeStatus(order.status_final);
+  const color = statusKindColor[kind];
+  const folio = String(order.id_pedido ?? order['﻿id_pedido'] ?? '');
 
   return (
     <Pressable style={styles.card} onPress={() => router.push('/(tabs)/pedidos')}>
@@ -28,11 +50,13 @@ export default function OrderStatusStrip() {
           <Text style={styles.title}>Pedido</Text>
           <View style={[styles.pill, { backgroundColor: color + '1A' }]}>
             <Text style={[styles.pillText, { color }]}>
-              {statusLabel[o.status]}
+              {statusKindLabel[kind]}
             </Text>
           </View>
         </View>
-        <Text style={styles.folio}>#{o.folio}</Text>
+        <Text style={styles.folio} numberOfLines={1}>
+          #{folio}
+        </Text>
       </View>
       <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
     </Pressable>
@@ -64,5 +88,5 @@ const styles = StyleSheet.create({
   title: { fontSize: 13, fontWeight: '800', color: colors.text },
   pill: { borderRadius: radius.pill, paddingHorizontal: 7, paddingVertical: 1 },
   pillText: { fontSize: 9, fontWeight: '800' },
-  folio: { fontSize: 11, color: colors.textMuted },
+  folio: { fontSize: 11, color: colors.textMuted, flex: 1 },
 });

@@ -14,6 +14,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { colors, radius, shadow } from '../../constants/theme';
+import { askAgent } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 const CAPI_PFP = require('../../assets/img/capipfpbig.png');
 const CAPI_REPLY = require('../../assets/img/capichatreply.png');
@@ -37,24 +39,45 @@ const INITIAL: Msg[] = [
 const CHIPS = ['Subir mi ticket', 'Vender más', 'Ponme una meta'];
 
 export default function CapiChat() {
+  const { customerId } = useAuth();
   const [messages, setMessages] = useState<Msg[]>(INITIAL);
   const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
-  const send = (t: string) => {
+  const scrollDown = () =>
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
+
+  const send = async (t: string) => {
     const v = t.trim();
-    if (!v) return;
+    if (!v || sending) return;
+
     setMessages((prev) => [
       ...prev,
       { id: `u${prev.length}`, from: 'user', text: v },
-      {
-        id: `c${prev.length}`,
-        from: 'capi',
-        text: '¡Va! Lo sumo a tu jugada y te aviso cómo vamos en el marcador.',
-      },
     ]);
     setText('');
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
+    setSending(true);
+    scrollDown();
+
+    // Le pasamos el customer_id al agente para que pueda contextualizar.
+    const question = customerId ? `[cliente ${customerId}] ${v}` : v;
+    let reply =
+      '¡Va! Lo sumo a tu jugada y te aviso cómo vamos en el marcador.';
+    try {
+      const res = await askAgent(question);
+      if (res?.answer) reply = res.answer;
+    } catch {
+      reply =
+        'Uy, no pude conectarme con tu agente ahorita. Revisa tu conexión e inténtalo de nuevo.';
+    }
+
+    setMessages((prev) => [
+      ...prev,
+      { id: `c${prev.length}`, from: 'capi', text: reply },
+    ]);
+    setSending(false);
+    scrollDown();
   };
 
   return (
@@ -64,7 +87,9 @@ export default function CapiChat() {
         <Image source={CAPI_PFP} style={styles.hpfp} />
         <View style={{ flex: 1 }}>
           <Text style={styles.hname}>Capi</Text>
-          <Text style={styles.status}>armando tu jugada</Text>
+          <Text style={styles.status}>
+            {sending ? 'escribiendo…' : 'armando tu jugada'}
+          </Text>
         </View>
         <Pressable style={styles.hbtn} onPress={() => router.back()}>
           <Ionicons name="close" size={18} color={colors.textMuted} />
