@@ -75,9 +75,6 @@ export default function CapiChat() {
             {loading ? 'armando tu jugada…' : 'tu coach de ventas'}
           </Text>
         </View>
-        <Pressable style={styles.hbtnWa} onPress={() => router.push('/capiteavisascreen')}>
-          <Ionicons name="logo-whatsapp" size={18} color="#fff" />
-        </Pressable>
         <Pressable style={styles.hbtn} onPress={() => router.push('/capi/marcador')}>
           <Ionicons name="speedometer-outline" size={18} color={colors.primary} />
         </Pressable>
@@ -205,14 +202,6 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: radius.pill,
     backgroundColor: colors.surfaceAlt,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  hbtnWa: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.pill,
-    backgroundColor: '#25D366',
     alignItems: 'center',
     justifyContent: 'center',
   },
